@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Events\TransactionsCategorized;
+use App\Events\TransactionsSynced;
+use App\Listeners\CategorizeNewTransactions;
+use App\Listeners\InvalidateSpendingCache;
 use App\Services\Teller\TellerClient;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -23,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Event::listen(TransactionsSynced::class, CategorizeNewTransactions::class);
+        Event::listen(TransactionsCategorized::class, InvalidateSpendingCache::class);
     }
 }

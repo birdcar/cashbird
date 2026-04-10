@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Events\TransactionsSynced;
 use App\Jobs\SyncAccountTransactions;
 use App\Jobs\SyncAllAccounts;
 use App\Models\Account;
@@ -12,6 +13,7 @@ use App\Models\TellerEnrollment;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -28,6 +30,8 @@ class TransactionSyncTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        Event::fake([TransactionsSynced::class]);
 
         $this->user = User::factory()->create();
         $this->institution = Institution::factory()->create();

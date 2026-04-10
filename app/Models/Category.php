@@ -42,4 +42,13 @@ class Category extends Model
     {
         return $this->hasMany(self::class, 'parent_id');
     }
+
+    public function fullPath(): string
+    {
+        if ($this->parent) {
+            return $this->parent->fullPath() . ' > ' . $this->name;
+        }
+
+        return $this->name;
+    }
 }

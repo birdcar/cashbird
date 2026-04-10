@@ -11,6 +11,16 @@
             />
             <input wire:model.live="dateFrom" type="date" class="rounded-lg border border-gray-300 px-4 py-2 text-sm" />
             <input wire:model.live="dateTo" type="date" class="rounded-lg border border-gray-300 px-4 py-2 text-sm" />
+            <select wire:model.live="categoryFilter" class="rounded-lg border border-gray-300 px-4 py-2 text-sm">
+                <option value="">All Categories</option>
+                @foreach($categories as $parent)
+                    <optgroup label="{{ $parent->name }}">
+                        @foreach($parent->children as $child)
+                            <option value="{{ $child->id }}">{{ $child->name }}</option>
+                        @endforeach
+                    </optgroup>
+                @endforeach
+            </select>
         </div>
 
         <div class="overflow-hidden rounded-lg border border-gray-200 bg-white">
@@ -50,7 +60,8 @@
                                 {{ $transaction->account->name }}
                             </td>
                             <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                                {{ $transaction->category?->name ?? '—' }}
+                                <span>{{ $transaction->category?->name ?? '—' }}</span>
+                                <livewire:transactions.category-override :transaction-id="$transaction->id" :key="'cat-'.$transaction->id" />
                             </td>
                             <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium {{ $transaction->amount < 0 ? 'text-red-600' : 'text-green-600' }}">
                                 ${{ number_format(abs($transaction->amount) / 100, 2) }}

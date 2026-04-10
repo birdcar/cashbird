@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Transactions;
 
+use App\Models\Category;
 use Illuminate\View\View;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -17,6 +18,7 @@ class TransactionList extends Component
     public string $search = '';
     public string $dateFrom = '';
     public string $dateTo = '';
+    public string $categoryFilter = '';
     public string $sortBy = 'date';
     public string $sortDir = 'desc';
 
@@ -56,14 +58,24 @@ class TransactionList extends Component
             $query->where('date', '<=', $this->dateTo);
         }
 
+        if ($this->categoryFilter !== '') {
+            $query->where('category_id', $this->categoryFilter);
+        }
+
         $safeSortBy = in_array($this->sortBy, self::SORTABLE_COLUMNS, true) ? $this->sortBy : 'date';
         $safeSortDir = $this->sortDir === 'asc' ? 'asc' : 'desc';
 
         $transactions = $query->orderBy($safeSortBy, $safeSortDir)
             ->paginate(25);
 
+        $categories = Category::with('children')
+            ->whereNull('parent_id')
+            ->orderBy('name')
+            ->get();
+
         return view('livewire.transactions.transaction-list', [
             'transactions' => $transactions,
+            'categories' => $categories,
         ]);
     }
 }
