@@ -3,6 +3,7 @@
 use App\Http\Controllers\TellerController;
 use App\Livewire\Accounts\AccountList;
 use App\Livewire\Accounts\ConnectAccount;
+use App\Livewire\Budget\BudgetOverview;
 use App\Livewire\Transactions\TransactionList;
 use Illuminate\Support\Facades\Route;
 
@@ -20,6 +21,8 @@ Route::middleware('auth:workos')->group(function () {
     Route::post('/accounts/connect', [TellerController::class, 'store'])->name('teller.store');
 
     Route::get('/transactions', TransactionList::class)->name('transactions.index');
+
+    Route::get('/budget', BudgetOverview::class)->name('budget.index');
 });
 
 Route::post('/webhooks/teller', [TellerController::class, 'webhook'])->name('teller.webhook');

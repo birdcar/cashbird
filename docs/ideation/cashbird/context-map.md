@@ -1,13 +1,13 @@
 # Context Map: cashbird
 
-**Phase**: 3
-**Scout Confidence**: 74/100
+**Phase**: 4
+**Scout Confidence**: 82/100
 **Verdict**: GO
 
 ## Key Risks
-- `laravel/ai` v0.5.0 installed — Agent uses `Promptable` trait, `HasStructuredOutput` for typed responses
-- `EventServiceProvider` doesn't exist — use `Event::listen()` in `AppServiceProvider::boot()` 
-- `categorized_at` column missing from transactions — needs migration
-- `user_id` FK is `foreignId` (bigint), not UUID — match in new tables
-- Category model already has parent/children relationships from Phase 2
-- Transaction model already has category() relationship from Phase 2
+- Phase 5 debt model doesn't exist — stub debt minimums at 0
+- Console/Kernel.php and EventServiceProvider don't exist — use routes/console.php and AppServiceProvider
+- BudgetAgent namespace: spec says App\Agents, existing agent is App\Ai\Agents — use App\Ai\Agents for consistency
+- daily_safe division-by-zero on last day of month — guard with max(1, $daysRemaining)
+- Redis in tests — use Cache facade or Redis fake
+- JSONB column — use ->json() which normalizes to jsonb on pgsql

@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\GenerateBudgetProposal;
 use App\Jobs\SyncAllAccounts;
 use App\Models\User;
 use Illuminate\Foundation\Inspiring;
@@ -16,3 +17,10 @@ Schedule::call(function () {
             fn (User $user) => SyncAllAccounts::dispatch($user)
         ));
 })->daily()->name('sync-all-accounts')->withoutOverlapping();
+
+Schedule::call(function () {
+    User::whereHas('budget', fn ($q) => $q->whereHas('periods', fn ($p) => $p->where('status', 'active')))
+        ->chunkById(100, fn ($users) => $users->each(
+            fn (User $user) => GenerateBudgetProposal::dispatch($user)
+        ));
+})->monthlyOn(28, '08:00')->name('generate-budget-proposals')->withoutOverlapping();

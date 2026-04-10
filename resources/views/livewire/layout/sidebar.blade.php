@@ -12,9 +12,10 @@
            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium {{ request()->routeIs('accounts.*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
             Accounts
         </a>
-        <span aria-disabled="true" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400">
+        <a href="{{ route('budget.index') }}"
+           class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium {{ request()->routeIs('budget.*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
             Budget
-        </span>
+        </a>
         <span aria-disabled="true" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400">
             Debt
         </span>

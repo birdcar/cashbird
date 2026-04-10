@@ -8,7 +8,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use WorkOS\AuthKit\Models\Concerns\HasWorkOSId;
@@ -17,7 +17,7 @@ use WorkOS\AuthKit\Models\Concerns\HasWorkOSPermissions;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, HasWorkOSId, HasWorkOSPermissions;
+    use HasFactory, HasWorkOSId, HasWorkOSPermissions, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -68,5 +68,19 @@ class User extends Authenticatable
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
+    }
+
+    /** @return HasOne<Budget, $this> */
+    public function budget(): HasOne
+    {
+        return $this->hasOne(Budget::class);
+    }
+
+    public function currentBudgetPeriod(): ?BudgetPeriod
+    {
+        return $this->budget?->periods()
+            ->where('status', 'active')
+            ->orderByDesc('month')
+            ->first();
     }
 }
