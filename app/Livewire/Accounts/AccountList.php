@@ -13,7 +13,9 @@ class AccountList extends Component
     {
         $accounts = auth()->user()->accounts()
             ->with('institution')
-            ->orderBy('institution_id')
+            ->join('institutions', 'accounts.institution_id', '=', 'institutions.id')
+            ->orderBy('institutions.name')
+            ->select('accounts.*')
             ->get();
 
         return view('livewire.accounts.account-list', [

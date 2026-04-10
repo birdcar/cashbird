@@ -8,6 +8,7 @@ use App\Jobs\ProcessTellerWebhook;
 use App\Jobs\SyncAllAccounts;
 use App\Models\Institution;
 use App\Models\TellerEnrollment;
+use App\Services\Teller\TellerWebhookHandler;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,21 +31,17 @@ class TellerController extends Controller
             ['name' => $request->input('institution.name')],
         );
 
-        $existing = TellerEnrollment::where('user_id', $user->id)
-            ->where('institution_id', $institution->id)
-            ->first();
-
-        if ($existing) {
+        try {
+            TellerEnrollment::create([
+                'user_id' => $user->id,
+                'institution_id' => $institution->id,
+                'access_token' => $request->input('access_token'),
+                'enrolled_at' => now(),
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
             return redirect()->route('accounts.index')
                 ->with('error', 'This institution is already connected.');
         }
-
-        TellerEnrollment::create([
-            'user_id' => $user->id,
-            'institution_id' => $institution->id,
-            'access_token' => $request->input('access_token'),
-            'enrolled_at' => now(),
-        ]);
 
         SyncAllAccounts::dispatch($user);
 
@@ -52,30 +49,14 @@ class TellerController extends Controller
             ->with('success', 'Account connected. Syncing transactions...');
     }
 
-    public function webhook(Request $request): JsonResponse
+    public function webhook(Request $request, TellerWebhookHandler $handler): JsonResponse
     {
-        $this->verifyWebhookSignature($request);
+        $handler->verifySignature($request);
 
         ProcessTellerWebhook::dispatch(
             $request->json()->all(),
         );
 
         return response()->json(['status' => 'ok']);
-    }
-
-    private function verifyWebhookSignature(Request $request): void
-    {
-        $secret = config('teller.signing_secret');
-        $signature = $request->header('Teller-Signature');
-
-        if (! $secret || ! $signature) {
-            abort(403, 'Invalid webhook signature');
-        }
-
-        $expected = hash_hmac('sha256', $request->getContent(), $secret);
-
-        if (! hash_equals($expected, $signature)) {
-            abort(403, 'Invalid webhook signature');
-        }
     }
 }

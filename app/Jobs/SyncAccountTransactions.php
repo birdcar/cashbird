@@ -67,7 +67,11 @@ class SyncAccountTransactions implements ShouldQueue
         $fromId = null;
 
         if (! $this->fullSync) {
-            $fromId = $this->account->transactions()->max('teller_id');
+            $latest = $this->account->transactions()
+                ->orderByDesc('date')
+                ->orderByDesc('id')
+                ->first();
+            $fromId = $latest?->teller_id;
         }
 
         do {

@@ -12,6 +12,8 @@ class TransactionList extends Component
 {
     use WithPagination;
 
+    private const SORTABLE_COLUMNS = ['date', 'amount', 'description', 'merchant_name', 'status'];
+
     public string $search = '';
     public string $dateFrom = '';
     public string $dateTo = '';
@@ -25,6 +27,10 @@ class TransactionList extends Component
 
     public function sort(string $column): void
     {
+        if (! in_array($column, self::SORTABLE_COLUMNS, true)) {
+            return;
+        }
+
         if ($this->sortBy === $column) {
             $this->sortDir = $this->sortDir === 'asc' ? 'desc' : 'asc';
         } else {
@@ -39,18 +45,21 @@ class TransactionList extends Component
             ->with(['account', 'category']);
 
         if ($this->search !== '') {
-            $query->where('description', 'like', "%{$this->search}%");
+            $query->where('description', 'like', '%' . str_replace(['%', '_'], ['\%', '\_'], $this->search) . '%');
         }
 
-        if ($this->dateFrom !== '') {
+        if ($this->dateFrom !== '' && strtotime($this->dateFrom) !== false) {
             $query->where('date', '>=', $this->dateFrom);
         }
 
-        if ($this->dateTo !== '') {
+        if ($this->dateTo !== '' && strtotime($this->dateTo) !== false) {
             $query->where('date', '<=', $this->dateTo);
         }
 
-        $transactions = $query->orderBy($this->sortBy, $this->sortDir)
+        $safeSortBy = in_array($this->sortBy, self::SORTABLE_COLUMNS, true) ? $this->sortBy : 'date';
+        $safeSortDir = $this->sortDir === 'asc' ? 'asc' : 'desc';
+
+        $transactions = $query->orderBy($safeSortBy, $safeSortDir)
             ->paginate(25);
 
         return view('livewire.transactions.transaction-list', [

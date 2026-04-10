@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\Crypt;
 
 class TellerEnrollment extends Model
 {
@@ -28,18 +27,14 @@ class TellerEnrollment extends Model
     protected function casts(): array
     {
         return [
+            'access_token' => 'encrypted',
             'enrolled_at' => 'datetime',
         ];
     }
 
-    public function setAccessTokenAttribute(string $value): void
-    {
-        $this->attributes['access_token'] = Crypt::encryptString($value);
-    }
-
     public function getDecryptedAccessToken(): string
     {
-        return Crypt::decryptString($this->attributes['access_token']);
+        return $this->access_token;
     }
 
     /** @return BelongsTo<User, $this> */
