@@ -13,13 +13,17 @@ return new class extends Migration
         Schema::create('categories', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('name');
-            $table->foreignUuid('parent_id')->nullable()->constrained('categories')->nullOnDelete();
+            $table->uuid('parent_id')->nullable();
             $table->string('icon', 50)->nullable();
             $table->string('color', 7)->nullable();
             $table->boolean('is_system')->default(false);
             $table->timestamps();
 
             $table->unique(['name', 'parent_id']);
+        });
+
+        Schema::table('categories', function (Blueprint $table) {
+            $table->foreign('parent_id')->references('id')->on('categories')->nullOnDelete();
         });
     }
 
