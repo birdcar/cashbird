@@ -16,19 +16,19 @@
     @else
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div class="rounded-lg border border-gray-200 bg-white p-6">
-                <p class="text-sm text-gray-500">Total Owed</p>
+                <p class="text-sm text-gray-600">Total Owed</p>
                 <p class="text-2xl font-bold text-gray-900">${{ number_format($totalOwed / 100, 2) }}</p>
             </div>
             <div class="rounded-lg border border-gray-200 bg-white p-6">
-                <p class="text-sm text-gray-500">Average APR</p>
+                <p class="text-sm text-gray-600">Average APR</p>
                 <p class="text-2xl font-bold text-gray-900">{{ $avgApr }}%</p>
             </div>
             <div class="rounded-lg border border-gray-200 bg-white p-6">
-                <p class="text-sm text-gray-500">Monthly Minimums</p>
+                <p class="text-sm text-gray-600">Monthly Minimums</p>
                 <p class="text-2xl font-bold text-gray-900">${{ number_format($totalMinimum / 100, 2) }}</p>
             </div>
             <div class="rounded-lg border border-gray-200 bg-white p-6">
-                <p class="text-sm text-gray-500">Debt-Free Date</p>
+                <p class="text-sm text-gray-600">Debt-Free Date</p>
                 <p class="text-2xl font-bold text-gray-900">
                     @if($schedule->monthsToDebtFree > 0)
                         {{ $schedule->projectedDebtFreeDate->format('M Y') }}
@@ -47,14 +47,14 @@
             </div>
             <div class="divide-y divide-gray-100">
                 @foreach($debts as $debt)
-                    <a href="{{ route('debt.show', $debt) }}" class="flex items-center justify-between px-6 py-4 hover:bg-gray-50" wire:navigate>
+                    <a wire:key="{{ $debt->id }}" href="{{ route('debt.show', $debt) }}" class="flex items-center justify-between px-6 py-4 hover:bg-gray-50" wire:navigate aria-label="{{ $debt->name }} — view debt details">
                         <div>
                             <p class="font-medium text-gray-900">{{ $debt->name }}</p>
-                            <p class="text-sm text-gray-500">{{ $debt->lender ?? ucfirst(str_replace('_', ' ', $debt->type)) }} &middot; {{ number_format((float) $debt->apr, 2) }}% APR</p>
+                            <p class="text-sm text-gray-600">{{ $debt->lender ?? ucfirst(str_replace('_', ' ', $debt->type)) }} &middot; {{ number_format((float) $debt->apr, 2) }}% APR</p>
                         </div>
                         <div class="text-right">
                             <p class="font-medium text-gray-900">${{ number_format($debt->current_balance / 100, 2) }}</p>
-                            <p class="text-sm text-gray-500">${{ number_format($debt->minimum_payment / 100, 2) }}/mo min</p>
+                            <p class="text-sm text-gray-600">${{ number_format($debt->minimum_payment / 100, 2) }}/mo min</p>
                         </div>
                     </a>
                 @endforeach

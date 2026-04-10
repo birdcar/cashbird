@@ -8,12 +8,12 @@ use App\Models\Debt;
 use App\Models\User;
 use App\Services\Debt\PayoffProjector;
 use Carbon\Carbon;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
 
 class PayoffProjectorTest extends TestCase
 {
-    use RefreshDatabase;
+    use LazilyRefreshDatabase;
 
     private PayoffProjector $projector;
 

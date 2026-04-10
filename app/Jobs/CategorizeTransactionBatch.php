@@ -100,6 +100,7 @@ class CategorizeTransactionBatch implements ShouldQueue
                         'merchant' => $transaction->merchant_name,
                         'confidence' => $confidence,
                     ]);
+                    $category = $resolver->resolve('Uncategorized');
                 }
 
                 $transaction->update([

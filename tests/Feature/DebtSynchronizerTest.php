@@ -4,18 +4,21 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\DebtStatus;
+use App\Enums\DebtType;
+use App\Enums\PaymentSource;
 use App\Models\Account;
 use App\Models\Debt;
 use App\Models\DebtPayment;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Debt\DebtSynchronizer;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
 
 class DebtSynchronizerTest extends TestCase
 {
-    use RefreshDatabase;
+    use LazilyRefreshDatabase;
 
     private DebtSynchronizer $synchronizer;
 
@@ -42,9 +45,9 @@ class DebtSynchronizerTest extends TestCase
         $this->assertDatabaseCount('debts', 1);
         $debt = Debt::where('account_id', $account->id)->first();
         $this->assertEquals('Chase Sapphire', $debt->name);
-        $this->assertEquals('credit_card', $debt->type);
+        $this->assertEquals(DebtType::CreditCard, $debt->type);
         $this->assertEquals(250000, $debt->current_balance);
-        $this->assertEquals('active', $debt->status);
+        $this->assertEquals(DebtStatus::Active, $debt->status);
     }
 
     public function test_creates_debt_from_loan_account(): void
@@ -60,7 +63,7 @@ class DebtSynchronizerTest extends TestCase
 
         $this->assertDatabaseCount('debts', 1);
         $debt = Debt::where('account_id', $account->id)->first();
-        $this->assertEquals('personal_loan', $debt->type);
+        $this->assertEquals(DebtType::PersonalLoan, $debt->type);
         $this->assertEquals(1500000, $debt->current_balance);
     }
 
@@ -135,7 +138,7 @@ class DebtSynchronizerTest extends TestCase
         $this->assertDatabaseCount('debt_payments', 1);
         $payment = DebtPayment::where('debt_id', $debt->id)->first();
         $this->assertEquals(50000, $payment->amount);
-        $this->assertEquals('detected', $payment->source);
+        $this->assertEquals(PaymentSource::Detected, $payment->source);
     }
 
     public function test_does_not_duplicate_payment_records(): void
@@ -172,7 +175,7 @@ class DebtSynchronizerTest extends TestCase
         $this->synchronizer->syncForUser($this->user);
 
         $debt = Debt::where('account_id', $account->id)->first();
-        $this->assertEquals('paid_off', $debt->status);
+        $this->assertEquals(DebtStatus::PaidOff, $debt->status);
         $this->assertNotNull($debt->paid_off_at);
         $this->assertEquals(0, $debt->current_balance);
     }

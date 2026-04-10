@@ -12,6 +12,7 @@ use App\Models\RecurringCharge;
 use App\Models\Transaction;
 use App\Services\Categorization\SpendingAggregator;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class BudgetCalculator
 {
@@ -22,34 +23,36 @@ class BudgetCalculator
 
     public function generateInitialBudget(int $userId): BudgetPeriod
     {
-        $income = $this->estimateMonthlyIncome($userId);
+        return DB::transaction(function () use ($userId) {
+            $income = $this->estimateMonthlyIncome($userId);
 
-        $budget = Budget::firstOrCreate(
-            ['user_id' => $userId],
-            ['projected_monthly_income' => $income],
-        );
+            $budget = Budget::firstOrCreate(
+                ['user_id' => $userId],
+                ['projected_monthly_income' => $income],
+            );
 
-        $month = Carbon::now()->startOfMonth();
+            $month = Carbon::now()->startOfMonth();
 
-        $period = BudgetPeriod::firstOrCreate([
-            'budget_id' => $budget->id,
-            'month' => $month->toDateString(),
-        ], [
-            'total_income' => $income,
-            'total_allocated' => 0,
-            'status' => 'active',
-        ]);
+            $period = BudgetPeriod::firstOrCreate([
+                'budget_id' => $budget->id,
+                'month' => $month->toDateString(),
+            ], [
+                'total_income' => $income,
+                'total_allocated' => 0,
+                'status' => 'active',
+            ]);
 
-        $this->detector->detect($userId);
+            $this->detector->detect($userId);
 
-        $this->allocateFromRecurring($period, $userId);
-        $this->allocateDiscretionary($period, $userId);
+            $this->allocateFromRecurring($period, $userId);
+            $this->allocateDiscretionary($period, $userId);
 
-        $period->update([
-            'total_allocated' => $period->allocations()->sum('allocated_amount'),
-        ]);
+            $period->update([
+                'total_allocated' => $period->allocations()->sum('allocated_amount'),
+            ]);
 
-        return $period;
+            return $period;
+        });
     }
 
     public function allocateRemaining(BudgetPeriod $period): void
@@ -131,10 +134,14 @@ class BudgetCalculator
             ->where('frequency', 'monthly')
             ->get();
 
+        $fallbackCategoryId = Category::where('name', 'Uncategorized')
+            ->whereNull('parent_id')
+            ->value('id');
+
         foreach ($recurring as $charge) {
             BudgetAllocation::create([
                 'budget_period_id' => $period->id,
-                'category_id' => $charge->category_id ?? Category::where('name', 'Uncategorized')->whereNull('parent_id')->value('id'),
+                'category_id' => $charge->category_id ?? $fallbackCategoryId,
                 'allocated_amount' => $charge->average_amount,
                 'is_fixed' => true,
                 'lock_reason' => "recurring: \${$this->formatCents($charge->average_amount)}/mo detected",

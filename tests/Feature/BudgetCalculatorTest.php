@@ -14,12 +14,12 @@ use App\Models\User;
 use App\Services\Budget\BudgetCalculator;
 use Carbon\Carbon;
 use Database\Seeders\CategorySeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
 
 class BudgetCalculatorTest extends TestCase
 {
-    use RefreshDatabase;
+    use LazilyRefreshDatabase;
 
     private BudgetCalculator $calculator;
 

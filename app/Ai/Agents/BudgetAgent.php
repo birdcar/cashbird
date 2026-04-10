@@ -5,27 +5,52 @@ declare(strict_types=1);
 namespace App\Ai\Agents;
 
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Laravel\Ai\Attributes\UseSmartestModel;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Promptable;
 use Stringable;
 
+#[UseSmartestModel]
 class BudgetAgent implements Agent, HasStructuredOutput
 {
     use Promptable;
 
+    private int $discretionaryPool = 0;
+
+    /** @var array<string, int> category_id => average_amount_cents */
+    private array $historicalSpending = [];
+
+    /** @var array<string, string> category_id => category_name */
+    private array $categories = [];
+
+    public function withDiscretionaryPool(int $cents): static
+    {
+        $this->discretionaryPool = $cents;
+
+        return $this;
+    }
+
+    /** @param array<string, int> $spending category_id => average_amount_cents */
+    public function withHistoricalSpending(array $spending): static
+    {
+        $this->historicalSpending = $spending;
+
+        return $this;
+    }
+
+    /** @param array<string, string> $categories category_id => category_name */
+    public function withCategories(array $categories): static
+    {
+        $this->categories = $categories;
+
+        return $this;
+    }
+
     public function instructions(): Stringable|string
     {
-        return <<<'PROMPT'
+        $instructions = <<<'PROMPT'
 You are a personal finance budget advisor. Given a user's financial context, allocate a discretionary spending pool across categories.
-
-INPUT FORMAT
-You will receive labeled fields:
-- Monthly income (cents)
-- Locked allocations (user-set, non-negotiable)
-- Fixed recurring charges (auto-detected subscriptions)
-- Historical 3-month spending averages by category
-- Discretionary pool available (cents)
 
 ALLOCATION PRIORITIES (in order)
 1. Essential variable expenses first — groceries, gas, healthcare, transportation. Base on historical averages, scale down proportionally if pool is insufficient.
@@ -36,18 +61,50 @@ If the pool cannot cover all of priority 1, scale every priority-1 category equa
 
 RULES
 - Every dollar must be allocated. Total of all amounts must equal the discretionary pool exactly.
-- Return allocations as a JSON array of objects with: category_id, amount (in cents), rationale (one sentence, max 100 chars)
-- Never allocate negative amounts
-- If the pool is $0 or negative, return an empty array
+- Return amounts in cents (integers). Do not return fractional cents.
+- Never allocate negative amounts.
+- If the pool is $0 or negative, return an empty array.
+- Use only category IDs from the provided list.
+- Rationale must be one sentence, max 100 characters.
 PROMPT;
+
+        if ($this->discretionaryPool > 0) {
+            $poolDollars = number_format($this->discretionaryPool / 100, 2);
+            $instructions .= "\n\nDISCRETIONARY POOL: {$this->discretionaryPool} cents (\${$poolDollars})";
+        }
+
+        if (! empty($this->categories)) {
+            $instructions .= "\n\nAVAILABLE CATEGORIES (use these IDs only):\n";
+            foreach ($this->categories as $id => $name) {
+                $instructions .= "- {$id}: {$name}\n";
+            }
+        }
+
+        if (! empty($this->historicalSpending)) {
+            $instructions .= "\n\nHISTORICAL 3-MONTH SPENDING AVERAGES (cents/month):\n";
+            foreach ($this->historicalSpending as $id => $amount) {
+                $name = $this->categories[$id] ?? $id;
+                $instructions .= "- {$name} ({$id}): {$amount} cents\n";
+            }
+        }
+
+        return $instructions;
     }
 
     /** @return array<string, mixed> */
     public function schema(JsonSchema $schema): array
     {
         return [
-            'allocations' => $schema->string()->required()
-                ->description('JSON array of {category_id, amount, rationale} objects. Total must equal discretionary pool.'),
+            'allocations' => $schema->array()->required()
+                ->items($schema->object([
+                    'category_id' => $schema->string()->required()
+                        ->description('Category UUID from the provided list.'),
+                    'amount' => $schema->integer()->required()
+                        ->description('Amount in cents. Must be >= 0.'),
+                    'rationale' => $schema->string()->required()
+                        ->description('One sentence, max 100 characters.'),
+                ]))
+                ->description('Budget allocations. Total of all amounts must equal the discretionary pool.'),
         ];
     }
 }

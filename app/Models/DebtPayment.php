@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\PaymentSource;
 use Database\Factories\DebtPaymentFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -34,6 +35,7 @@ class DebtPayment extends Model
             'interest' => 'integer',
             'balance_after' => 'integer',
             'payment_date' => 'date',
+            'source' => PaymentSource::class,
         ];
     }
 

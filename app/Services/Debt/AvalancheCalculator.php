@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Debt;
 
+use App\Enums\DebtStatus;
 use App\Models\Debt;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -18,7 +19,7 @@ class AvalancheCalculator
      */
     public function calculatePayoffOrder(Collection $debts): Collection
     {
-        return $debts->sortByDesc('apr')->values();
+        return $debts->sortByDesc(fn (Debt $d): float => (float) $d->apr)->values();
     }
 
     /**
@@ -28,7 +29,7 @@ class AvalancheCalculator
     public function allocateExtraPayment(Collection $debts, int $extraCents): array
     {
         $sorted = $this->calculatePayoffOrder(
-            $debts->filter(fn ($d) => $d->status === 'active' && $d->current_balance > 0)
+            $debts->filter(fn ($d) => $d->status === DebtStatus::Active && $d->current_balance > 0)
         );
 
         $allocations = [];
@@ -57,7 +58,7 @@ class AvalancheCalculator
     public function projectPayoffSchedule(Collection $debts, int $monthlyExtra = 0): PayoffSchedule
     {
         $activeDebts = $debts
-            ->filter(fn ($d) => $d->status === 'active' && $d->current_balance > 0)
+            ->filter(fn ($d) => $d->status === DebtStatus::Active && $d->current_balance > 0)
             ->map(fn ($d) => [
                 'id' => $d->id,
                 'name' => $d->name,
@@ -92,7 +93,8 @@ class AvalancheCalculator
             $monthSnapshot = [];
 
             foreach ($activeDebts as &$debt) {
-                $monthlyInterest = (int) round($debt['balance'] * ($debt['apr'] / 12 / 100));
+                $effectiveBalance = max(0, $debt['balance']);
+                $monthlyInterest = (int) round($effectiveBalance * ($debt['apr'] / 12 / 100));
                 $totalInterest += $monthlyInterest;
 
                 if ($debt['is_in_recovery']) {

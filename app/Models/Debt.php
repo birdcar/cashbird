@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\DebtStatus;
+use App\Enums\DebtType;
 use Database\Factories\DebtFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -38,11 +41,13 @@ class Debt extends Model
         return [
             'current_balance' => 'integer',
             'original_balance' => 'integer',
+            'type' => DebtType::class,
             'apr' => 'decimal:3',
             'minimum_payment' => 'integer',
             'due_day' => 'integer',
             'is_in_recovery' => 'boolean',
             'recovery_terms' => 'array',
+            'status' => DebtStatus::class,
             'paid_off_at' => 'datetime',
         ];
     }
@@ -63,5 +68,19 @@ class Debt extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(DebtPayment::class);
+    }
+
+    /** @param Builder<Debt> $query */
+    public function scopeActive(Builder $query): void
+    {
+        $query->where('status', DebtStatus::Active);
+    }
+
+    /** @param Builder<Debt> $query */
+    public function scopeProjectable(Builder $query): void
+    {
+        $query->where('status', DebtStatus::Active)
+            ->where('current_balance', '>', 0)
+            ->where('minimum_payment', '>', 0);
     }
 }

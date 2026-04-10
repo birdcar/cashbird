@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Livewire\Debt;
 
+use App\Enums\DebtType;
 use App\Models\Debt;
+use App\Support\Money;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
@@ -48,15 +50,23 @@ class AddManualDebt extends Component
 
     public function save(): void
     {
+        if ($this->type === DebtType::RecoveryPlan->value) {
+            $this->validate([
+                'recovery_fixed_payment' => 'required|numeric|min:0.01',
+                'recovery_duration_months' => 'required|integer|min:1|max:120',
+                'recovery_start_date' => 'required|date',
+            ]);
+        }
+
         $this->validate();
 
         $user = auth()->user();
-        assert($user !== null);
+        abort_if($user === null, 401);
 
-        $isRecovery = $this->type === 'recovery_plan';
+        $isRecovery = $this->type === DebtType::RecoveryPlan->value;
 
         $recoveryTerms = $isRecovery ? [
-            'fixed_payment' => (int) round((float) $this->recovery_fixed_payment * 100),
+            'fixed_payment' => Money::toCents($this->recovery_fixed_payment ?? '0'),
             'duration_months' => $this->recovery_duration_months,
             'start_date' => $this->recovery_start_date,
         ] : null;
@@ -66,10 +76,10 @@ class AddManualDebt extends Component
             'name' => $this->name,
             'type' => $this->type,
             'lender' => $this->lender,
-            'current_balance' => (int) round((float) $this->current_balance * 100),
-            'original_balance' => $this->original_balance ? (int) round((float) $this->original_balance * 100) : null,
+            'current_balance' => Money::toCents($this->current_balance),
+            'original_balance' => $this->original_balance ? Money::toCents($this->original_balance) : null,
             'apr' => (float) $this->apr,
-            'minimum_payment' => (int) round((float) $this->minimum_payment * 100),
+            'minimum_payment' => Money::toCents($this->minimum_payment),
             'due_day' => $this->due_day,
             'is_in_recovery' => $isRecovery,
             'recovery_terms' => $recoveryTerms,

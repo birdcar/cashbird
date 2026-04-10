@@ -7,12 +7,12 @@ namespace Tests\Feature;
 use App\Models\Debt;
 use App\Models\User;
 use App\Services\Debt\AvalancheCalculator;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
 
 class AvalancheCalculatorTest extends TestCase
 {
-    use RefreshDatabase;
+    use LazilyRefreshDatabase;
 
     private AvalancheCalculator $calculator;
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\PaymentSource;
 use App\Models\Debt;
 use App\Models\DebtPayment;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -16,21 +17,25 @@ class DebtPaymentFactory extends Factory
     /** @return array<string, mixed> */
     public function definition(): array
     {
+        $amount = fake()->numberBetween(5000, 50000);
+        $interest = fake()->numberBetween(1000, (int) round($amount * 0.3));
+        $principal = $amount - $interest;
+
         return [
             'debt_id' => Debt::factory(),
-            'amount' => fake()->numberBetween(5000, 50000),
-            'principal' => fake()->numberBetween(3000, 40000),
-            'interest' => fake()->numberBetween(1000, 10000),
+            'amount' => $amount,
+            'principal' => $principal,
+            'interest' => $interest,
             'balance_after' => fake()->numberBetween(50000, 2000000),
             'payment_date' => fake()->dateTimeBetween('-6 months', 'now'),
-            'source' => 'detected',
+            'source' => PaymentSource::Detected,
         ];
     }
 
     public function manual(): static
     {
         return $this->state(fn () => [
-            'source' => 'manual',
+            'source' => PaymentSource::Manual,
         ]);
     }
 }

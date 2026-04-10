@@ -7,10 +7,12 @@ namespace App\Livewire\Budget;
 use App\Models\BudgetAllocation;
 use App\Models\BudgetProposal;
 use Illuminate\View\View;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 class ProposalReview extends Component
 {
+    #[Locked]
     public string $proposalId;
 
     public function mount(string $proposalId): void
@@ -62,7 +64,8 @@ class ProposalReview extends Component
 
     public function render(): View
     {
-        $proposal = BudgetProposal::with('period')->findOrFail($this->proposalId);
+        $proposal = $this->ownedProposal();
+        abort_if($proposal === null, 403);
 
         return view('livewire.budget.proposal-review', [
             'proposal' => $proposal,

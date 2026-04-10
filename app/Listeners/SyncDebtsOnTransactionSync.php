@@ -6,8 +6,9 @@ namespace App\Listeners;
 
 use App\Events\TransactionsSynced;
 use App\Services\Debt\DebtSynchronizer;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
-class SyncDebtsOnTransactionSync
+class SyncDebtsOnTransactionSync implements ShouldQueue
 {
     public function __construct(
         private readonly DebtSynchronizer $synchronizer,

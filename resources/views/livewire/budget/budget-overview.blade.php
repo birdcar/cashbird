@@ -6,8 +6,9 @@
     @if(!$hasBudget)
         <div class="rounded-lg border border-gray-200 bg-white p-8 text-center">
             <p class="mb-4 text-gray-600">No budget set up yet. Create one based on your spending history.</p>
-            <button wire:click="createBudget" class="rounded-lg bg-gray-900 px-6 py-3 text-sm font-medium text-white hover:bg-gray-800">
-                Generate Budget
+            <button wire:click="createBudget" wire:loading.attr="disabled" class="rounded-lg bg-gray-900 px-6 py-3 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
+                <span wire:loading.remove>Generate Budget</span>
+                <span wire:loading>Generating…</span>
             </button>
         </div>
     @elseif($period)
@@ -24,15 +25,15 @@
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div class="rounded-lg border border-gray-200 bg-white p-6">
-                <p class="text-sm text-gray-500">Monthly Income</p>
+                <p class="text-sm text-gray-600">Monthly Income</p>
                 <p class="text-2xl font-bold text-gray-900">${{ number_format($period->total_income / 100, 2) }}</p>
             </div>
             <div class="rounded-lg border border-gray-200 bg-white p-6">
-                <p class="text-sm text-gray-500">Total Allocated</p>
+                <p class="text-sm text-gray-600">Total Allocated</p>
                 <p class="text-2xl font-bold text-gray-900">${{ number_format($period->total_allocated / 100, 2) }}</p>
             </div>
             <div class="rounded-lg border border-gray-200 bg-white p-6">
-                <p class="text-sm text-gray-500">Unallocated</p>
+                <p class="text-sm text-gray-600">Unallocated</p>
                 <p class="text-2xl font-bold {{ ($period->total_income - $period->total_allocated) >= 0 ? 'text-green-600' : 'text-red-600' }}">
                     ${{ number_format(($period->total_income - $period->total_allocated) / 100, 2) }}
                 </p>
@@ -46,7 +47,7 @@
             <div class="divide-y divide-gray-100">
                 @foreach($allocations as $allocation)
                     @php $rts = $rtsData[$allocation->category_id] ?? null; @endphp
-                    <div class="flex items-center justify-between px-6 py-4">
+                    <div wire:key="{{ $allocation->id }}" class="flex items-center justify-between px-6 py-4">
                         <div class="flex items-center gap-3">
                             <span class="font-medium text-gray-900">{{ $allocation->category?->name ?? 'Unknown' }}</span>
                             @if($allocation->is_locked)
@@ -67,8 +68,13 @@
                             </div>
                             @if($rts && $allocation->allocated_amount > 0)
                                 <div class="w-24">
-                                    <div class="h-2 w-full rounded-full bg-gray-100">
-                                        @php $pct = min(100, ($rts['spent'] + $rts['pending']) / $allocation->allocated_amount * 100) @endphp
+                                    @php $pct = min(100, ($rts['spent'] + $rts['pending']) / $allocation->allocated_amount * 100) @endphp
+                                    <div class="h-2 w-full rounded-full bg-gray-100"
+                                         role="progressbar"
+                                         aria-valuenow="{{ (int) round($pct) }}"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100"
+                                         aria-label="{{ $allocation->category?->name ?? 'Category' }} spending: {{ (int) round($pct) }}%">
                                         <div class="h-2 rounded-full {{ $pct > 100 ? 'bg-red-500' : 'bg-gray-800' }}" style="width: {{ $pct }}%"></div>
                                     </div>
                                 </div>

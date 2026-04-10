@@ -6,11 +6,13 @@ namespace App\Livewire\Budget;
 
 use App\Models\BudgetAllocation;
 use Illuminate\View\View;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
 class AllocationEditor extends Component
 {
+    #[Locked]
     public string $allocationId;
 
     #[Validate('required|integer|min:0')]

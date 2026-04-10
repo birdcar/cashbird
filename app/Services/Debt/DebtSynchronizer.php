@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services\Debt;
 
+use App\Enums\DebtStatus;
+use App\Enums\DebtType;
+use App\Enums\PaymentSource;
 use App\Models\Account;
 use App\Models\Debt;
 use App\Models\DebtPayment;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class DebtSynchronizer
 {
@@ -17,6 +21,7 @@ class DebtSynchronizer
     {
         $debtAccounts = $user->accounts()
             ->whereIn('type', self::DEBT_ACCOUNT_TYPES)
+            ->with(['institution'])
             ->get();
 
         foreach ($debtAccounts as $account) {
@@ -26,16 +31,18 @@ class DebtSynchronizer
 
     public function syncAccount(User $user, Account $account): void
     {
-        $debt = Debt::where('account_id', $account->id)->first();
+        DB::transaction(function () use ($user, $account) {
+            $debt = Debt::where('account_id', $account->id)->first();
 
-        if (! $debt) {
-            $debt = $this->createDebtFromAccount($user, $account);
-        } else {
-            $this->updateBalance($debt, $account);
-        }
+            if (! $debt) {
+                $debt = $this->createDebtFromAccount($user, $account);
+            } else {
+                $this->updateBalance($debt, $account);
+            }
 
-        $this->detectPayments($debt, $account);
-        $this->detectPayoff($debt);
+            $this->detectPayments($debt, $account);
+            $this->detectPayoff($debt);
+        });
     }
 
     private function createDebtFromAccount(User $user, Account $account): Debt
@@ -46,13 +53,13 @@ class DebtSynchronizer
             'user_id' => $user->id,
             'account_id' => $account->id,
             'name' => $account->name,
-            'type' => $account->type === 'credit_card' ? 'credit_card' : 'personal_loan',
+            'type' => $account->type === 'credit_card' ? DebtType::CreditCard : DebtType::PersonalLoan,
             'lender' => $account->institution?->name,
             'current_balance' => $balance,
             'original_balance' => $balance,
             'apr' => 0.0,
             'minimum_payment' => 0,
-            'status' => 'active',
+            'status' => DebtStatus::Active,
         ]);
     }
 
@@ -76,9 +83,17 @@ class DebtSynchronizer
             ->orderBy('date')
             ->get();
 
+        if ($transactions->isEmpty()) {
+            return;
+        }
+
+        $existingTransactionIds = DebtPayment::where('debt_id', $debt->id)
+            ->whereIn('transaction_id', $transactions->pluck('id'))
+            ->pluck('transaction_id')
+            ->flip();
+
         foreach ($transactions as $transaction) {
-            $existing = DebtPayment::where('transaction_id', $transaction->id)->exists();
-            if ($existing) {
+            if ($existingTransactionIds->has($transaction->id)) {
                 continue;
             }
 
@@ -87,7 +102,7 @@ class DebtSynchronizer
                 'amount' => $transaction->amount,
                 'balance_after' => $debt->current_balance,
                 'payment_date' => $transaction->date,
-                'source' => 'detected',
+                'source' => PaymentSource::Detected,
                 'transaction_id' => $transaction->id,
             ]);
         }
@@ -95,13 +110,13 @@ class DebtSynchronizer
 
     private function detectPayoff(Debt $debt): void
     {
-        if ($debt->status !== 'active') {
+        if ($debt->status !== DebtStatus::Active) {
             return;
         }
 
         if ($debt->current_balance <= 0) {
             $debt->update([
-                'status' => 'paid_off',
+                'status' => DebtStatus::PaidOff,
                 'current_balance' => 0,
                 'paid_off_at' => now(),
             ]);
