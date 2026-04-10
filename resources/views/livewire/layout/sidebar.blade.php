@@ -1,0 +1,37 @@
+<nav class="flex w-64 flex-col border-r border-gray-200 bg-white">
+    <div class="flex h-16 items-center border-b border-gray-200 px-6">
+        <span class="text-lg font-bold text-gray-900">Cashbird</span>
+    </div>
+
+    <div class="flex flex-1 flex-col gap-1 p-4">
+        <a href="{{ route('dashboard') }}"
+           class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium {{ request()->routeIs('dashboard') ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+            Dashboard
+        </a>
+        <a href="#"
+           class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400 cursor-not-allowed">
+            Accounts
+        </a>
+        <a href="#"
+           class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400 cursor-not-allowed">
+            Budget
+        </a>
+        <a href="#"
+           class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400 cursor-not-allowed">
+            Debt
+        </a>
+        <a href="#"
+           class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400 cursor-not-allowed">
+            Reports
+        </a>
+    </div>
+
+    <div class="border-t border-gray-200 p-4">
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button type="submit" class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900">
+                Logout
+            </button>
+        </form>
+    </div>
+</nav>
