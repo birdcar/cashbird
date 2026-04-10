@@ -16,7 +16,13 @@ class ProcessTellerWebhook implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public int $tries = 3;
+
+    /** @var list<int> */
+    public array $backoff = [5, 30];
+
     public function __construct(
+        /** @var array<string, mixed> */
         public array $payload,
     ) {}
 

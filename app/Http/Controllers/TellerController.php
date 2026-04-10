@@ -9,6 +9,7 @@ use App\Jobs\SyncAllAccounts;
 use App\Models\Institution;
 use App\Models\TellerEnrollment;
 use App\Services\Teller\TellerWebhookHandler;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,6 +26,7 @@ class TellerController extends Controller
         ]);
 
         $user = $request->user();
+        assert($user !== null);
 
         $institution = Institution::firstOrCreate(
             ['teller_id' => $request->input('institution.id')],
@@ -38,7 +40,7 @@ class TellerController extends Controller
                 'access_token' => $request->input('access_token'),
                 'enrolled_at' => now(),
             ]);
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (UniqueConstraintViolationException) {
             return redirect()->route('accounts.index')
                 ->with('error', 'This institution is already connected.');
         }

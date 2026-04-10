@@ -16,6 +16,11 @@ class SyncAllAccounts implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public int $tries = 3;
+
+    /** @var list<int> */
+    public array $backoff = [60, 300];
+
     public function __construct(
         public User $user,
     ) {}
@@ -25,7 +30,7 @@ class SyncAllAccounts implements ShouldQueue
         $enrollments = $this->user->enrollments()->where('status', 'active')->get();
 
         foreach ($enrollments as $enrollment) {
-            $accessToken = $enrollment->getDecryptedAccessToken();
+            $accessToken = $enrollment->access_token;
 
             $tellerAccounts = $teller->listAccounts($accessToken);
 

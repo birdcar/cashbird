@@ -23,14 +23,17 @@ class CategoryOverride extends Component
 
     public function openModal(): void
     {
+        $this->selectedCategoryId = '';
         $this->showModal = true;
     }
 
     public function save(CategoryResolver $resolver): void
     {
-        $transaction = Transaction::findOrFail($this->transactionId);
-        $category = Category::findOrFail($this->selectedCategoryId);
         $user = auth()->user();
+        assert($user !== null);
+
+        $transaction = $user->transactions()->findOrFail($this->transactionId);
+        $category = Category::findOrFail($this->selectedCategoryId);
 
         $transaction->update(['category_id' => $category->id]);
         $resolver->saveOverride($transaction, $category, $user->id);

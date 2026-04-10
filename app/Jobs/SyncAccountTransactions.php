@@ -30,8 +30,9 @@ class SyncAccountTransactions implements ShouldQueue
 
     public function handle(TellerClient $teller): void
     {
+        $this->account->loadMissing('enrollment');
         $enrollment = $this->account->enrollment;
-        $accessToken = $enrollment->getDecryptedAccessToken();
+        $accessToken = $enrollment->access_token;
 
         $this->syncBalances($teller, $accessToken);
         $this->syncTransactions($teller, $accessToken);

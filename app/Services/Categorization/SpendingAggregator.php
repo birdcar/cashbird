@@ -58,21 +58,23 @@ class SpendingAggregator
     /** @return array<int, array<string, mixed>> */
     public function monthOverMonth(int $userId, int $months = 6): array
     {
-        $results = [];
         $now = Carbon::now()->startOfMonth();
+        $rangeStart = $now->copy()->subMonths($months - 1);
+        $rangeEnd = $now->copy()->endOfMonth();
 
+        $rows = Transaction::where('user_id', $userId)
+            ->where('amount', '<', 0)
+            ->whereBetween('date', [$rangeStart->toDateString(), $rangeEnd->toDateString()])
+            ->selectRaw("strftime('%Y-%m', date) as month, SUM(amount) as total_amount")
+            ->groupByRaw("strftime('%Y-%m', date)")
+            ->pluck('total_amount', 'month');
+
+        $results = [];
         for ($i = $months - 1; $i >= 0; $i--) {
-            $start = $now->copy()->subMonths($i);
-            $end = $start->copy()->endOfMonth();
-
-            $total = Transaction::where('user_id', $userId)
-                ->where('amount', '<', 0)
-                ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
-                ->sum('amount');
-
+            $monthKey = $now->copy()->subMonths($i)->format('Y-m');
             $results[] = [
-                'month' => $start->format('Y-m'),
-                'total_amount' => (int) abs($total),
+                'month' => $monthKey,
+                'total_amount' => (int) abs((int) ($rows[$monthKey] ?? 0)),
             ];
         }
 

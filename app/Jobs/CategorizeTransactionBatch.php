@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Ai\Agents\CategorizationAgent;
 use App\Events\TransactionsCategorized;
+use App\Models\CategoryOverride;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Categorization\CategoryResolver;
@@ -14,6 +15,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class CategorizeTransactionBatch implements ShouldQueue
 {
@@ -43,10 +45,13 @@ class CategorizeTransactionBatch implements ShouldQueue
         $merchantCache = $resolver->getMerchantCache($this->user->id);
         $categoryTree = CategorizationAgent::buildCategoryTree();
 
+        $overrideLookup = CategoryOverride::where('user_id', $this->user->id)
+            ->pluck('category_id', 'merchant_name');
+
+        /** @var \Illuminate\Support\Collection<int, Transaction> $needsAi */
         $needsAi = collect();
 
         foreach ($transactions as $transaction) {
-            // Check merchant cache first
             if ($transaction->merchant_name && $merchantCache->has($transaction->merchant_name)) {
                 $transaction->update([
                     'category_id' => $merchantCache[$transaction->merchant_name],
@@ -55,16 +60,12 @@ class CategorizeTransactionBatch implements ShouldQueue
                 continue;
             }
 
-            // Check user overrides
-            if ($transaction->merchant_name) {
-                $override = $resolver->getOverridesForMerchant($transaction->merchant_name, $this->user->id);
-                if ($override) {
-                    $transaction->update([
-                        'category_id' => $override->id,
-                        'categorized_at' => now(),
-                    ]);
-                    continue;
-                }
+            if ($transaction->merchant_name && $overrideLookup->has($transaction->merchant_name)) {
+                $transaction->update([
+                    'category_id' => $overrideLookup[$transaction->merchant_name],
+                    'categorized_at' => now(),
+                ]);
+                continue;
             }
 
             $needsAi->push($transaction);
@@ -85,8 +86,15 @@ class CategorizeTransactionBatch implements ShouldQueue
                 );
 
                 $response = $agent->prompt($prompt);
-                $categoryPath = $response['category_path'] ?? 'Uncategorized';
+                $categoryPath = (string) ($response['category_path'] ?? 'Uncategorized');
                 $category = $resolver->resolve($categoryPath);
+
+                if ($category === null) {
+                    Log::warning("Unresolvable category path from AI: {$categoryPath}", [
+                        'transaction_id' => $transaction->id,
+                        'merchant' => $transaction->merchant_name,
+                    ]);
+                }
 
                 $transaction->update([
                     'category_id' => $category?->id,
@@ -96,6 +104,7 @@ class CategorizeTransactionBatch implements ShouldQueue
         }
 
         // Dispatch event per affected account
+        $transactions->load('account');
         $transactions->pluck('account_id')->unique()->each(function ($accountId) use ($transactions) {
             $account = $transactions->first(fn ($t) => $t->account_id === $accountId)?->account;
             if ($account) {
@@ -103,13 +112,8 @@ class CategorizeTransactionBatch implements ShouldQueue
             }
         });
 
-        // If more uncategorized exist, dispatch another batch
-        $remaining = Transaction::where('user_id', $this->user->id)
-            ->whereNull('category_id')
-            ->whereNull('categorized_at')
-            ->exists();
-
-        if ($remaining) {
+        // If we fetched a full batch, there may be more
+        if ($transactions->count() === 20) {
             static::dispatch($this->user);
         }
     }

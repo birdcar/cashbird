@@ -12,5 +12,7 @@ Artisan::command('inspire', function () {
 
 Schedule::call(function () {
     User::whereHas('enrollments', fn ($q) => $q->where('status', 'active'))
-        ->each(fn (User $user) => SyncAllAccounts::dispatch($user));
-})->daily()->name('sync-all-accounts');
+        ->chunkById(100, fn ($users) => $users->each(
+            fn (User $user) => SyncAllAccounts::dispatch($user)
+        ));
+})->daily()->name('sync-all-accounts')->withoutOverlapping();

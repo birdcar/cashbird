@@ -77,6 +77,8 @@ class TellerClient
     {
         $request = Http::withToken($accessToken)
             ->acceptJson()
+            ->timeout(30)
+            ->connectTimeout(5)
             ->retry(3, function (int $attempt) {
                 return match ($attempt) {
                     1 => 1000,

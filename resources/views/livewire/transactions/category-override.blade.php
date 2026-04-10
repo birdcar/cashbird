@@ -8,7 +8,7 @@
             <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
                 <h3 class="mb-4 text-lg font-semibold text-gray-900">Override Category</h3>
 
-                <select wire:model="selectedCategoryId" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                <select wire:model.live="selectedCategoryId" aria-label="Category" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
                     <option value="">Select category...</option>
                     @foreach($categories as $parent)
                         <optgroup label="{{ $parent->name }}">

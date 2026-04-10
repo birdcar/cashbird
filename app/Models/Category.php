@@ -43,10 +43,12 @@ class Category extends Model
         return $this->hasMany(self::class, 'parent_id');
     }
 
-    public function fullPath(): string
+    public function fullPath(int $maxDepth = 5): string
     {
-        if ($this->parent) {
-            return $this->parent->fullPath() . ' > ' . $this->name;
+        $this->loadMissing('parent');
+
+        if ($this->parent && $maxDepth > 0) {
+            return $this->parent->fullPath($maxDepth - 1) . ' > ' . $this->name;
         }
 
         return $this->name;
