@@ -47,8 +47,8 @@ class BudgetAgentTest extends TestCase
         $agent = BudgetAgent::make();
         $instructions = (string) $agent->instructions();
 
-        $this->assertStringContainsString('Emergency fund', $instructions);
-        $this->assertStringContainsString('Essential variable', $instructions);
+        $this->assertStringContainsString('Essential variable expenses', $instructions);
+        $this->assertStringContainsString('Lifestyle discretionary', $instructions);
         $this->assertStringContainsString('Every dollar must be allocated', $instructions);
     }
 }

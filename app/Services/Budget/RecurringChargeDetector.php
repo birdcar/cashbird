@@ -80,7 +80,7 @@ class RecurringChargeDetector
         $meanInterval = array_sum($intervals) / count($intervals);
         $stdDev = $this->standardDeviation($intervals);
 
-        if ($meanInterval == 0) {
+        if ($meanInterval < 1) {
             return null;
         }
 

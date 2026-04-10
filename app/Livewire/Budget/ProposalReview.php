@@ -20,7 +20,11 @@ class ProposalReview extends Component
 
     public function approve(): void
     {
-        $proposal = BudgetProposal::findOrFail($this->proposalId);
+        $proposal = $this->ownedProposal();
+        if (! $proposal) {
+            return;
+        }
+
         $period = $proposal->period;
 
         foreach ($proposal->changes as $change) {
@@ -43,7 +47,10 @@ class ProposalReview extends Component
 
     public function reject(): void
     {
-        $proposal = BudgetProposal::findOrFail($this->proposalId);
+        $proposal = $this->ownedProposal();
+        if (! $proposal) {
+            return;
+        }
 
         $proposal->update([
             'status' => 'rejected',
@@ -60,5 +67,18 @@ class ProposalReview extends Component
         return view('livewire.budget.proposal-review', [
             'proposal' => $proposal,
         ]);
+    }
+
+    private function ownedProposal(): ?BudgetProposal
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return null;
+        }
+
+        return BudgetProposal::with('period.budget')
+            ->whereHas('period.budget', fn ($q) => $q->where('user_id', $user->getAuthIdentifier()))
+            ->where('id', $this->proposalId)
+            ->first();
     }
 }

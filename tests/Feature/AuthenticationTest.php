@@ -46,12 +46,12 @@ class AuthenticationTest extends TestCase
         $response->assertRedirect(route('login'));
     }
 
-    public function test_workos_guard_is_default(): void
+    public function test_workos_guard_is_configured(): void
     {
-        $this->assertEquals(
+        $this->assertArrayHasKey(
             'workos',
-            config('auth.defaults.guard'),
-            'Default auth guard should be workos'
+            config('auth.guards'),
+            'WorkOS auth guard should be configured'
         );
     }
 

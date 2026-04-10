@@ -12,7 +12,7 @@ return new class extends Migration
     {
         Schema::create('budget_proposals', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('budget_period_id')->constrained();
+            $table->foreignUuid('budget_period_id')->constrained()->cascadeOnDelete();
             $table->string('proposed_by', 20)->default('ai');
             $table->json('changes');
             $table->string('status', 20)->default('pending');

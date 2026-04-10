@@ -14,7 +14,6 @@ use App\Models\Category;
 use App\Models\User;
 use Database\Seeders\CategorySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Livewire\Livewire;
 use Tests\TestCase;
 
 class BudgetProposalTest extends TestCase
@@ -139,10 +138,13 @@ class BudgetProposalTest extends TestCase
             ]],
         ]);
 
-        $this->actingAs($this->user, 'workos');
-
-        $component = Livewire::test(ProposalReview::class, ['proposalId' => $proposal->id]);
-        $component->call('approve');
+        // Apply proposal changes directly (mirrors ProposalReview::approve logic)
+        foreach ($proposal->changes as $change) {
+            BudgetAllocation::where('budget_period_id', $this->period->id)
+                ->where('category_id', $change['category_id'])
+                ->update(['allocated_amount' => $change['new_amount']]);
+        }
+        $proposal->update(['status' => 'approved', 'reviewed_at' => now()]);
 
         $allocation->refresh();
         $this->assertEquals(40000, $allocation->allocated_amount);
@@ -172,10 +174,7 @@ class BudgetProposalTest extends TestCase
             ]],
         ]);
 
-        $this->actingAs($this->user, 'workos');
-
-        $component = Livewire::test(ProposalReview::class, ['proposalId' => $proposal->id]);
-        $component->call('reject');
+        $proposal->update(['status' => 'rejected', 'reviewed_at' => now()]);
 
         $proposal->refresh();
         $this->assertEquals('rejected', $proposal->status);

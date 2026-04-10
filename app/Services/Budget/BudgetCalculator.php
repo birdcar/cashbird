@@ -31,9 +31,10 @@ class BudgetCalculator
 
         $month = Carbon::now()->startOfMonth();
 
-        $period = BudgetPeriod::create([
+        $period = BudgetPeriod::firstOrCreate([
             'budget_id' => $budget->id,
             'month' => $month->toDateString(),
+        ], [
             'total_income' => $income,
             'total_allocated' => 0,
             'status' => 'active',
