@@ -24,36 +24,36 @@ class CategorizationAgentTest extends TestCase
     {
         $tree = CategorizationAgent::buildCategoryTree();
 
-        $this->assertStringContainsString('Food & Drink', $tree);
-        $this->assertStringContainsString('Groceries', $tree);
-        $this->assertStringContainsString('Entertainment', $tree);
-        $this->assertStringContainsString('Streaming', $tree);
+        $this->assertStringContainsString('Food & Drink > Groceries', $tree);
+        $this->assertStringContainsString('Entertainment > Streaming', $tree);
+        $this->assertStringContainsString('Uncategorized', $tree);
     }
 
     public function test_categorizes_known_merchant(): void
     {
         CategorizationAgent::fake([
-            ['category_path' => 'Food & Drink > Groceries'],
+            ['category_path' => 'Food & Drink > Groceries', 'confidence' => 'high'],
         ]);
 
         $agent = CategorizationAgent::make()
             ->withCategoryTree(CategorizationAgent::buildCategoryTree());
 
-        $response = $agent->prompt('Categorize: WALMART SUPERCENTER, amount: -$52.34');
+        $response = $agent->prompt("Merchant: WALMART SUPERCENTER\nAmount: -\$52.34\nType: debit");
 
         $this->assertEquals('Food & Drink > Groceries', $response['category_path']);
+        $this->assertEquals('high', $response['confidence']);
     }
 
     public function test_categorizes_streaming_service(): void
     {
         CategorizationAgent::fake([
-            ['category_path' => 'Entertainment > Streaming'],
+            ['category_path' => 'Entertainment > Streaming', 'confidence' => 'high'],
         ]);
 
         $agent = CategorizationAgent::make()
             ->withCategoryTree(CategorizationAgent::buildCategoryTree());
 
-        $response = $agent->prompt('Categorize: NETFLIX.COM, amount: -$15.99');
+        $response = $agent->prompt("Merchant: NETFLIX.COM\nAmount: -\$15.99\nType: debit");
 
         $this->assertEquals('Entertainment > Streaming', $response['category_path']);
     }
@@ -61,7 +61,7 @@ class CategorizationAgentTest extends TestCase
     public function test_returns_uncategorized_for_unknown(): void
     {
         CategorizationAgent::fake([
-            ['category_path' => 'Uncategorized'],
+            ['category_path' => 'Uncategorized', 'confidence' => 'low'],
         ]);
 
         $agent = CategorizationAgent::make()
@@ -75,7 +75,7 @@ class CategorizationAgentTest extends TestCase
     public function test_includes_overrides_in_instructions(): void
     {
         CategorizationAgent::fake([
-            ['category_path' => 'Food & Drink > Groceries'],
+            ['category_path' => 'Food & Drink > Groceries', 'confidence' => 'high'],
         ]);
 
         $agent = CategorizationAgent::make()
@@ -94,7 +94,7 @@ class CategorizationAgentTest extends TestCase
     public function test_assert_prompted_works(): void
     {
         CategorizationAgent::fake([
-            ['category_path' => 'Shopping > Amazon'],
+            ['category_path' => 'Shopping > Amazon', 'confidence' => 'high'],
         ]);
 
         $agent = CategorizationAgent::make()

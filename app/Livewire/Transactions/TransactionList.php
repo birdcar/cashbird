@@ -6,9 +6,11 @@ namespace App\Livewire\Transactions;
 
 use App\Models\Category;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
 
+#[Layout('components.layouts.app')]
 class TransactionList extends Component
 {
     use WithPagination;
@@ -16,13 +18,33 @@ class TransactionList extends Component
     private const SORTABLE_COLUMNS = ['date', 'amount', 'description', 'merchant_name', 'status'];
 
     public string $search = '';
+
     public string $dateFrom = '';
+
     public string $dateTo = '';
+
     public string $categoryFilter = '';
+
     public string $sortBy = 'date';
+
     public string $sortDir = 'desc';
 
     public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingDateFrom(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingDateTo(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingCategoryFilter(): void
     {
         $this->resetPage();
     }
@@ -39,15 +61,20 @@ class TransactionList extends Component
             $this->sortBy = $column;
             $this->sortDir = 'desc';
         }
+
+        $this->resetPage();
     }
 
     public function render(): View
     {
-        $query = auth()->user()->transactions()
+        $user = auth()->user();
+        assert($user !== null);
+
+        $query = $user->transactions()
             ->with(['account', 'category']);
 
         if ($this->search !== '') {
-            $query->where('description', 'like', '%' . str_replace(['%', '_'], ['\%', '\_'], $this->search) . '%');
+            $query->where('description', 'like', '%'.str_replace(['%', '_'], ['\%', '\_'], $this->search).'%');
         }
 
         if ($this->dateFrom !== '' && strtotime($this->dateFrom) !== false) {

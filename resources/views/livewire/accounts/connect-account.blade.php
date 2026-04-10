@@ -1,5 +1,4 @@
-<x-layouts.app title="Connect Account">
-    <div class="space-y-6">
+<div class="space-y-6">
         <div class="flex items-center justify-between">
             <h1 class="text-2xl font-bold text-gray-900">Connect Account</h1>
             <a href="{{ route('accounts.index') }}" class="text-sm text-gray-600 hover:text-gray-900">Back to Accounts</a>
@@ -57,4 +56,4 @@
         });
     </script>
     @endpush
-</x-layouts.app>
+</div>

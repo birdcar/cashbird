@@ -9,7 +9,6 @@ use App\Models\Institution;
 use App\Models\TellerEnrollment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
@@ -25,8 +24,8 @@ class TellerEnrollmentTest extends TestCase
 
         $this->assertNotEquals('raw_test_token', $enrollment->getRawOriginal('access_token'));
 
-        $decrypted = $enrollment->getDecryptedAccessToken();
-        $this->assertEquals('raw_test_token', $decrypted);
+        $enrollment->refresh();
+        $this->assertEquals('raw_test_token', $enrollment->access_token);
     }
 
     public function test_enrollment_creation_via_controller(): void

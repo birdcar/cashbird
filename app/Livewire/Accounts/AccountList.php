@@ -5,13 +5,18 @@ declare(strict_types=1);
 namespace App\Livewire\Accounts;
 
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 
+#[Layout('components.layouts.app')]
 class AccountList extends Component
 {
     public function render(): View
     {
-        $accounts = auth()->user()->accounts()
+        $user = auth()->user();
+        assert($user !== null);
+
+        $accounts = $user->accounts()
             ->with('institution')
             ->join('institutions', 'accounts.institution_id', '=', 'institutions.id')
             ->orderBy('institutions.name')

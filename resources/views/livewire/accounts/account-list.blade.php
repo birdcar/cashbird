@@ -1,5 +1,4 @@
-<x-layouts.app title="Accounts">
-    <div class="space-y-6">
+<div class="space-y-6">
         <div class="flex items-center justify-between">
             <h1 class="text-2xl font-bold text-gray-900">Accounts</h1>
             <a href="{{ route('accounts.connect') }}"
@@ -49,5 +48,4 @@
                 </div>
             @endforeach
         @endif
-    </div>
-</x-layouts.app>
+</div>

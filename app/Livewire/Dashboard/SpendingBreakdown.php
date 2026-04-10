@@ -13,7 +13,9 @@ class SpendingBreakdown extends Component
 {
     public function render(SpendingAggregator $aggregator): View
     {
-        $userId = auth()->user()->id;
+        $user = auth()->user();
+        assert($user !== null);
+        $userId = $user->id;
         $start = Carbon::now()->startOfMonth();
         $end = Carbon::now()->endOfMonth();
 

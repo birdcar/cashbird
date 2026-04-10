@@ -32,11 +32,6 @@ class TellerEnrollment extends Model
         ];
     }
 
-    public function getDecryptedAccessToken(): string
-    {
-        return $this->access_token;
-    }
-
     /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {

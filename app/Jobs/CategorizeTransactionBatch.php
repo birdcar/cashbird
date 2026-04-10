@@ -15,6 +15,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 class CategorizeTransactionBatch implements ShouldQueue
@@ -23,6 +24,7 @@ class CategorizeTransactionBatch implements ShouldQueue
 
     public int $tries = 3;
 
+    /** @var list<int> */
     public array $backoff = [5, 30, 120];
 
     public function __construct(
@@ -48,7 +50,7 @@ class CategorizeTransactionBatch implements ShouldQueue
         $overrideLookup = CategoryOverride::where('user_id', $this->user->id)
             ->pluck('category_id', 'merchant_name');
 
-        /** @var \Illuminate\Support\Collection<int, Transaction> $needsAi */
+        /** @var Collection<int, Transaction> $needsAi */
         $needsAi = collect();
 
         foreach ($transactions as $transaction) {
@@ -57,6 +59,7 @@ class CategorizeTransactionBatch implements ShouldQueue
                     'category_id' => $merchantCache[$transaction->merchant_name],
                     'categorized_at' => now(),
                 ]);
+
                 continue;
             }
 
@@ -65,6 +68,7 @@ class CategorizeTransactionBatch implements ShouldQueue
                     'category_id' => $overrideLookup[$transaction->merchant_name],
                     'categorized_at' => now(),
                 ]);
+
                 continue;
             }
 
@@ -78,21 +82,23 @@ class CategorizeTransactionBatch implements ShouldQueue
                 ->withOverrides($overrides->toArray());
 
             foreach ($needsAi as $transaction) {
-                $prompt = sprintf(
-                    'Categorize: %s, description: %s, amount: $%.2f',
-                    $transaction->merchant_name ?? 'Unknown',
-                    $transaction->description,
-                    abs($transaction->amount) / 100,
-                );
+                $prompt = implode("\n", [
+                    'Merchant: '.($transaction->merchant_name ?? '(not available)'),
+                    'Description: '.$transaction->description,
+                    'Amount: '.($transaction->amount < 0 ? '-' : '+').'$'.number_format(abs($transaction->amount) / 100, 2),
+                    'Type: '.($transaction->amount < 0 ? 'debit' : 'credit'),
+                ]);
 
                 $response = $agent->prompt($prompt);
                 $categoryPath = (string) ($response['category_path'] ?? 'Uncategorized');
+                $confidence = (string) ($response['confidence'] ?? 'low');
                 $category = $resolver->resolve($categoryPath);
 
                 if ($category === null) {
                     Log::warning("Unresolvable category path from AI: {$categoryPath}", [
                         'transaction_id' => $transaction->id,
                         'merchant' => $transaction->merchant_name,
+                        'confidence' => $confidence,
                     ]);
                 }
 

@@ -1,4 +1,4 @@
-<nav class="flex w-64 flex-col border-r border-gray-200 bg-white">
+<nav aria-label="Main navigation" class="flex w-64 flex-col border-r border-gray-200 bg-white">
     <div class="flex h-16 items-center border-b border-gray-200 px-6">
         <span class="text-lg font-bold text-gray-900">Cashbird</span>
     </div>
@@ -12,18 +12,15 @@
            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium {{ request()->routeIs('accounts.*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
             Accounts
         </a>
-        <a href="#"
-           class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400 cursor-not-allowed">
+        <span aria-disabled="true" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400">
             Budget
-        </a>
-        <a href="#"
-           class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400 cursor-not-allowed">
+        </span>
+        <span aria-disabled="true" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400">
             Debt
-        </a>
-        <a href="#"
-           class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400 cursor-not-allowed">
+        </span>
+        <span aria-disabled="true" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400">
             Reports
-        </a>
+        </span>
     </div>
 
     <div class="border-t border-gray-200 p-4">
