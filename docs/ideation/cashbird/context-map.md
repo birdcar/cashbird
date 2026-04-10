@@ -1,56 +1,54 @@
 # Context Map: cashbird
 
-**Phase**: 1
-**Scout Confidence**: 72/100
+**Phase**: 2
+**Scout Confidence**: 82/100
 **Verdict**: GO
 
 ## Dimensions
 
 | Dimension | Score | Notes |
 |---|---|---|
-| Scope clarity | 18/20 | All new files listed explicitly in spec. Modified files are stock Laravel files that will exist post-bootstrap. Only ambiguity is whether `birdcar/authkit-laravel` is on Packagist or a private repo — affects `composer require` invocation. |
-| Pattern familiarity | 12/20 | No existing codebase to read patterns from. Patterns will be established by this phase. Laravel 13 conventions are well-known; `birdcar/authkit-laravel` internals (trait names, middleware key, Blade directives) are spec-provided but not verifiable pre-install. |
-| Dependency awareness | 16/20 | Greenfield — nothing consumes the new files yet. All file dependencies within this phase are self-contained and spec-enumerated. Blast radius is internal to Phase 1. |
-| Edge case coverage | 12/20 | Spec covers the key failure modes table (WorkOS unreachable, invalid callback state, Postgres refused, Redis down). Missing: what happens if `birdcar/authkit-laravel` package is not publicly available on Packagist; what `workos:install` actually publishes vs. what the spec assumes. |
-| Test strategy | 14/20 | Two test files identified with key test cases enumerated in spec. Filter commands given. SQLite in-memory is Laravel's default test DB — builder must configure tests to use pgsql or RefreshDatabase with SQLite for unit tests while keeping pgsql for feature tests. No existing phpunit.xml to read yet. |
+| Scope clarity | 18/20 | All files listed explicitly. One ambiguity: spec lists `app/Console/Kernel.php` as modified but Laravel 12 uses `routes/console.php` for scheduling. |
+| Pattern familiarity | 17/20 | Phase 1 patterns all readable. Config, model, migration, test, Livewire component patterns clear. Minor gap: no existing Service class pattern. |
+| Dependency awareness | 16/20 | `User.php` consumers identified (5 files). Modified files have low blast radius. Adding relationships/routes is additive. |
+| Edge case coverage | 16/20 | Spec enumerates error scenarios thoroughly. Additional: UUID PKs in SQLite tests, `Console/Kernel.php` vs `routes/console.php`, mTLS in test env. |
+| Test strategy | 15/20 | PHPUnit on SQLite in-memory. UUID PKs need `$table->uuid('id')->primary()` (PHP-side generation). `Http::fake()` for Teller API. |
+
+**Phase 1 scores**: Scope 18, Pattern 12, Dependency 16, Edge case 12, Test 14 → 72/100
 
 ## Key Patterns
 
-No "Pattern to follow" files exist yet — this is a greenfield project. Patterns will be established from:
-
-- Laravel 13 defaults for project structure, routing, model conventions
-- `birdcar/authkit-laravel` package conventions — trait names (`HasWorkOSId`, `HasWorkOSPermissions`), middleware key (`workos.auth`), Blade directives (`@workosAuth` / `@endWorkosAuth`), artisan commands (`workos:install`), service provider (`Birdcar\AuthKit\WorkOSServiceProvider`)
-- Livewire 3 component conventions (class in `app/Livewire/`, view in `resources/views/livewire/`)
-- Tailwind CSS 4 with `@tailwindcss/vite` plugin (not PostCSS plugin — this is the v4 approach)
+- `app/Models/Organization.php` — Model: `declare(strict_types=1)`, typed PHPDoc relations, static query helpers
+- `database/migrations/create_organizations_table.php` — Migration: anonymous class, idempotency guard
+- `config/workos.php` — Config: `declare(strict_types=1)`, section docblocks, `env()` with defaults
+- `app/Livewire/Layout/AppShell.php` — Livewire: `declare(strict_types=1)`, `render()` returns view with layout
+- `resources/views/livewire/dashboard.blade.php` — Views use `<x-layouts.app>` wrapper
+- `tests/Feature/AuthenticationTest.php` — PHPUnit `test_` prefix, `RefreshDatabase`, `declare(strict_types=1)`
+- `database/factories/UserFactory.php` — Factory: `definition()` returns `array<string, mixed>`
 
 ## Dependencies
 
-No external consumers — this is a greenfield phase. All files created here will be consumed by Phase 2+.
-
-Internal phase dependency order:
-1. `composer create-project` → produces `composer.json`, `app/Models/User.php`, `config/`, `routes/web.php`
-2. `composer require birdcar/authkit-laravel livewire/livewire` → modifies `composer.json`, enables trait imports
-3. `php artisan workos:install` → publishes `config/workos.php`, migrations
-4. Config modifications → `config/database.php`, `config/queue.php`, `config/cache.php`, `config/broadcasting.php`
-5. Layout files → `resources/views/components/layouts/app.blade.php`, sidebar, dashboard view
-6. Livewire component → `app/Livewire/Layout/AppShell.php`
-7. Docker files → `docker/Dockerfile`, `docker/docker-compose.yml`, `docker/nginx.conf`, `docker/.env.production`
-8. Test files → `tests/Feature/AuthenticationTest.php`, `tests/Feature/DashboardTest.php`
+- `app/Models/User.php` → consumed by tests, config, factory, seeder. Adding relationships is additive.
+- `routes/web.php` → consumed by `bootstrap/app.php`. Adding routes is additive.
+- `sidebar.blade.php` → `@include`'d by `app.blade.php`. Changing links is safe.
+- `app/Console/Kernel.php` — **does not exist** in Laravel 12. Use `routes/console.php`.
 
 ## Conventions
 
-- **Naming**: Laravel 13 conventions — PascalCase classes, snake_case columns, kebab-case view files, dot-notation for nested views
-- **Imports**: PSR-4 autoloading; `app/` maps to `App\`; `Birdcar\AuthKit\` namespace for authkit-laravel
-- **Error handling**: Laravel default exception handling; authkit-laravel handles WorkOS callback errors with redirect to login + flash
-- **Types**: PHP 8.3 — builder should use typed properties, return types, constructor promotion where appropriate
-- **Testing**: `tests/Feature/` for HTTP tests; `php artisan test` (Pest or PHPUnit — Laravel 13 ships with Pest by default); filter by class name with `--filter`; use `RefreshDatabase` trait
-- **Package manager**: `bun` per user preferences (not npm); `bun add -D tailwindcss @tailwindcss/vite` per spec
-- **Assets**: Vite + `@tailwindcss/vite` plugin (Tailwind v4 approach)
+- **Naming**: PascalCase models, kebab-case blades, snake_case DB columns
+- **Imports**: PSR-4, `declare(strict_types=1)` everywhere
+- **Types**: PHP 8.4, typed properties, constructor promotion, return types
+- **Testing**: PHPUnit (not Pest), `tests/Feature/`, `RefreshDatabase`, `Http::fake()`
+- **Config**: `declare(strict_types=1)`, `return []`, `env()` lookups
+- **Migrations**: timestamp-prefixed filenames, anonymous classes
+- **Scheduling**: `routes/console.php` (not Console/Kernel.php)
+- **Package manager**: bun (JS), composer (PHP)
 
 ## Risks
 
-- **`birdcar/authkit-laravel` availability**: Package may be a private/personal repo not on Packagist. Builder must verify or add VCS repository.
-- **Tailwind v4 config approach**: Spec lists `tailwind.config.js` as Modified File, but Tailwind CSS 4 uses CSS-first configuration. Builder should use v4 approach and skip JS config unless specifically needed.
-- **Test database configuration**: Laravel defaults tests to SQLite in-memory. Spec asserts PostgreSQL connection as test case — needs careful handling.
-- **`workos:install` artisan command scope**: Actual command behavior depends on package implementation. May need fallback to manual `vendor:publish`.
-- **`SESSION_DRIVER=database` with Postgres**: Requires `php artisan session:table` and migration before session driver works.
+- **`Console/Kernel.php` does not exist** — Use `routes/console.php` for scheduling
+- **UUID PKs with SQLite tests** — Use `$table->uuid('id')->primary()`, not raw SQL
+- **Categories migration before transactions** — FK reference requires ordering
+- **mTLS cert in tests** — Don't validate cert at instantiation; `Http::fake()` bypasses HTTP
+- **CSRF exclusion for webhook** — Add to `bootstrap/app.php` `withMiddleware()`
+- **No existing Service class pattern** — First service; register singleton in AppServiceProvider
