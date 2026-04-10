@@ -5,5 +5,7 @@
         <livewire:budget.ready-to-spend-card />
 
         <livewire:dashboard.spending-breakdown />
+
+        <livewire:debt.payoff-timeline />
     </div>
 </x-layouts.app>

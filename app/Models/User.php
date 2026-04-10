@@ -70,6 +70,12 @@ class User extends Authenticatable
         return $this->hasMany(Transaction::class);
     }
 
+    /** @return HasMany<Debt, $this> */
+    public function debts(): HasMany
+    {
+        return $this->hasMany(Debt::class);
+    }
+
     /** @return HasOne<Budget, $this> */
     public function budget(): HasOne
     {
