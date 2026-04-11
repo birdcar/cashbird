@@ -2,7 +2,7 @@
 
 A personal finance app for my household. It answers the two questions we ask every day: "what can we spend?" and "where did our money go?"
 
-It's not a SaaS product or a startup -- it's a family tool that connects to our bank accounts, categorizes transactions, builds budgets with AI, and gives us a shared view of our money. My girlfriend and daughter use it too, so the interface is designed to be clear even if you don't think about money all day.
+It's not a SaaS product or a startup -- it's a household tool that connects to our bank accounts, categorizes transactions, builds budgets with AI, and gives us a shared view of our money. The interface is designed to be clear for everyone in the household, even if you don't think about money all day.
 
 <!-- TODO: screenshot of the dashboard -->
 
@@ -108,6 +108,34 @@ tests/
   Feature/           # 26 feature test classes
   Unit/              # Unit tests
 ```
+
+## Deployment
+
+Cashbird is deployed with [Coolify](https://coolify.io/), a self-hosted PaaS.
+
+### Coolify setup
+
+1. **Create a new resource** in Coolify pointing to the `birdcar/cashbird` GitHub repo
+2. **Build pack**: Nixpacks (auto-detects Laravel)
+3. **Environment variables** — set the same ones from `.env.example` in Coolify's environment tab:
+   - `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://your-domain.com`
+   - Database: `DB_CONNECTION=pgsql`, `DB_HOST`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`
+   - Redis: `REDIS_HOST`, `REDIS_PASSWORD` (if applicable)
+   - WorkOS: `WORKOS_CLIENT_ID`, `WORKOS_API_KEY`, `WORKOS_REDIRECT_URI`
+   - Teller: `TELLER_APP_ID`, cert/key paths, signing secret
+   - AI provider keys
+4. **Post-deploy command** — Coolify runs this after each deploy:
+   ```bash
+   php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache
+   ```
+5. **Persistent storage** — mount `/app/storage` to persist logs, cache, and sessions across deploys
+6. **Services** — Coolify should also run PostgreSQL and Redis as linked services, or point to external instances
+7. **Queue worker** — add a worker process: `php artisan queue:work --sleep=3 --tries=3 --max-time=3600`
+8. **Scheduler** — add a cron process: `php artisan schedule:work` (or configure a cron job for `php artisan schedule:run` every minute)
+
+### Build
+
+Coolify's Nixpacks build will detect the Laravel app and handle PHP/Composer/Bun installation. The `bun run build` step compiles frontend assets during the build phase.
 
 ## License
 
