@@ -1,6 +1,8 @@
 <?php
 
+use App\Jobs\AnalyzeSpendingInsights;
 use App\Jobs\GenerateBudgetProposal;
+use App\Jobs\GenerateMonthlyReport;
 use App\Jobs\SyncAllAccounts;
 use App\Models\User;
 use App\Services\Debt\DebtSynchronizer;
@@ -33,3 +35,17 @@ Schedule::call(function () {
             fn (User $user) => $synchronizer->syncForUser($user)
         ));
 })->daily()->name('sync-debt-balances')->withoutOverlapping();
+
+Schedule::call(function () {
+    User::whereHas('accounts')
+        ->chunkById(100, fn ($users) => $users->each(
+            fn (User $user) => GenerateMonthlyReport::dispatch($user)
+        ));
+})->monthlyOn(1, '08:00')->name('generate-monthly-reports')->withoutOverlapping();
+
+Schedule::call(function () {
+    User::whereHas('accounts')
+        ->chunkById(100, fn ($users) => $users->each(
+            fn (User $user) => AnalyzeSpendingInsights::dispatch($user)
+        ));
+})->weekly()->name('analyze-spending-insights')->withoutOverlapping();

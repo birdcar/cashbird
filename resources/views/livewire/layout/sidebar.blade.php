@@ -23,9 +23,18 @@
            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium {{ request()->routeIs('debt.*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
             Debt
         </a>
-        <span class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400" title="Coming soon">
-            Reports <span class="text-xs">(soon)</span>
-        </span>
+        <a href="{{ route('reports.index') }}"
+           class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium {{ request()->routeIs('reports.*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+            Reports
+        </a>
+        <a href="{{ route('insights.index') }}"
+           class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium {{ request()->routeIs('insights.*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+            Insights
+        </a>
+        <a href="{{ route('chat.index') }}"
+           class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium {{ request()->routeIs('chat.*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+            Ask Cashbird
+        </a>
     </div>
 
     <div class="border-t border-gray-200 p-4">

@@ -1,64 +1,59 @@
 # Context Map: cashbird
 
-**Phase**: 5
-**Scout Confidence**: 88/100
+**Phase**: 6
+**Scout Confidence**: 87/100
 **Verdict**: GO
 
 ## Dimensions
 
 | Dimension | Score | Notes |
 |---|---|---|
-| Scope clarity | 18/20 | All new/modified files identified; `app/Console/Kernel.php` doesn't exist — `routes/console.php` is the scheduler |
-| Pattern familiarity | 19/20 | Read Budget/Account/Transaction models, BudgetCalculator service, Livewire components, migrations, factories, tests — patterns clear |
-| Dependency awareness | 17/20 | `Account.php` and `User.php` consumers identified; `TransactionsSynced` event + `AppServiceProvider` listener pattern confirmed |
-| Edge case coverage | 17/20 | Spec failure modes documented; UUID/foreignId mismatch is a critical catch the spec gets wrong |
-| Test strategy | 17/20 | Clear: `php artisan test --filter=Debt`, test structure mirrors `BudgetCalculatorTest.php`, factories required |
+| Scope clarity | 18/20 | All new/modified files identified; critical corrections on MCP registration and agent namespace |
+| Pattern familiarity | 18/20 | laravel/mcp source read; agent patterns read; job patterns read; tool handle signature confirmed |
+| Dependency awareness | 17/20 | routes/web.php, sidebar, dashboard, AppServiceProvider, routes/console.php all read |
+| Edge case coverage | 16/20 | Most failure modes documented; MCP auth via $request->user() confirmed; insight dedup needs care |
+| Test strategy | 18/20 | MCP testing via Server::tool(Tool::class, [...]); agent fake pattern confirmed |
 
-## Prior Phase Key Risks (Phase 4)
+## Prior Phase Key Risks (Phases 1-5)
 
-- Console/Kernel.php does not exist — use `routes/console.php` and `Schedule::` facade
-- BudgetAgent namespace: use `App\Ai\Agents` not `App\Agents`
+- `app/Console/Kernel.php` does not exist — use `routes/console.php` and `Schedule::` facade
+- Agent namespace: `App\Ai\Agents` not `App\Agents`
 - JSONB column — use `->json()` which normalizes to jsonb on pgsql
+- `user_id` FK uses integer PK — use `foreignId('user_id')` not `foreignUuid`
+
+## Phase 6 Key Corrections vs Spec
+
+- **Agent namespace**: Spec says `app/Agents/` — use `app/Ai/Agents/` (existing convention)
+- **MCP registration**: Spec says `AppServiceProvider` — use `routes/ai.php` (auto-loaded by McpServiceProvider)
+- **MCP Server**: Spec shows `MCP::tool()` facade — actual pattern is `protected array $tools = [...]` on Server class extending `Laravel\Mcp\Server`
+- **MCP tool names**: Auto-derived as kebab-case — override `protected string $name` for underscore names
+- **MCP tool handle**: Receives `Laravel\Mcp\Request` not `Illuminate\Http\Request`
+- **Scheduling**: Use `routes/console.php` not `app/Console/Kernel.php`
+- **Agent model**: Use `#[UseSmartestModel]` attribute not hardcoded `protected string $model`
+- **MCP namespace**: Use `app/Mcp/` (lowercase c)
 
 ## Key Patterns
 
-- `app/Models/Budget.php` — `declare(strict_types=1)`, `HasFactory` with typed generic docblock, `HasUuids`, `$fillable`, `casts()` method, typed relationship return annotations
-- `app/Services/Budget/BudgetCalculator.php` — readonly constructor injection, `declare(strict_types=1)`, cents-as-integers
-- `app/Livewire/Budget/BudgetOverview.php` — Full-page Livewire: `#[Layout('components.layouts.app')]`, service injection in `render()`, `auth()->user()` + `assert($user !== null)`
-- `app/Livewire/Budget/ReadyToSpendCard.php` — Sub-component: no `#[Layout]`, service injection in `render()`
-- `database/migrations/2026_04_10_200001_create_budgets_table.php` — `uuid('id')->primary()`, `foreignId('user_id')->constrained()->cascadeOnDelete()` (NOT foreignUuid)
-- `app/Events/TransactionsSynced.php` — Event: `use Dispatchable`, constructor with public typed property
-- `app/Providers/AppServiceProvider.php` — Event listener registration in `boot()`
-- `tests/Feature/BudgetCalculatorTest.php` — `RefreshDatabase`, `setUp()` + `$this->user`, PHPUnit class-based
-
-## Dependencies
-
-- `app/Models/User.php` — consumed by all Livewire components, services. Adding `debts()` is additive.
-- `app/Models/Account.php` — consumed by sync jobs, Teller controller. Adding `debt()` is additive.
-- `routes/web.php` — sidebar `route('debt.*')` calls. Must use `debt.index`, `debt.show`, `debt.create` naming.
-- `resources/views/livewire/layout/sidebar.blade.php` — has disabled "Debt" placeholder to activate.
-- `routes/console.php` — scheduler. Adding debt sync follows existing pattern.
-- `app/Providers/AppServiceProvider.php` — adding event listener follows existing pattern.
+- `app/Ai/Agents/BudgetAgent.php` — Agent: `Agent, HasStructuredOutput`, `Promptable` trait, `#[UseSmartestModel]`, fluent builders
+- `app/Ai/Agents/CategorizationAgent.php` — Agent with context injection, `#[UseCheapestModel]`, static helpers
+- `vendor/laravel/mcp/src/Server.php` — MCP Server: abstract, `protected array $tools = []`
+- `vendor/laravel/mcp/src/Server/Tool.php` — MCP Tool: extends `Primitive`, `schema()` + `handle()`, `Response` return
+- `vendor/laravel/mcp/src/Server/Testing/PendingTestResponse.php` — Test: `Server::tool(Tool::class, $args)->assertOk()`
+- `app/Jobs/GenerateBudgetProposal.php` — Job: `ShouldQueue`, 4 traits, `$tries`, `$backoff`, User constructor
+- `routes/console.php` — Schedule: `->monthlyOn(1, '08:00')`, `->weekly()`
 
 ## Conventions
 
-- **Naming**: Models singular PascalCase; services in `App\Services\Debt\`; Livewire in `App\Livewire\Debt\`; views in `resources/views/livewire/debt/`
-- **Imports**: `declare(strict_types=1);`, full class imports, grouped by type
-- **Error handling**: `assert($user !== null)` for auth guard, exceptions propagate
-- **Types**: PHPDoc `@return` on relationships with both generic args, `casts()` method not `$casts` property, money as `int` (cents)
-- **Testing**: `tests/Feature/`, `RefreshDatabase`, PHPUnit class-based, `php artisan test --compact --filter=ClassName`
-- **Migrations**: `uuid('id')->primary()` for UUID PK; `foreignId('user_id')` for User FK; `foreignUuid('account_id')` for Account FK
-
-## Critical Risk: Spec SQL vs Actual Schema
-
-The spec SQL uses `user_id UUID` — this is **wrong**. Users table uses integer PK. Use `foreignId('user_id')` not `foreignUuid`. Account and Transaction FKs are UUID (`foreignUuid`).
+- **Agents**: `app/Ai/Agents/`, `#[UseSmartestModel]`, `Promptable` trait, `HasStructuredOutput`
+- **MCP**: Tools in `app/Mcp/Tools/`, Server in `app/Mcp/`, routes in `routes/ai.php`
+- **Migrations**: `uuid('id')->primary()`, `foreignId('user_id')`, `->json()` for JSONB
+- **Testing**: `Server::actingAs($user)->tool(Tool::class, $args)`, `Agent::fake([...])`
 
 ## Risks
 
-- **`user_id` FK type mismatch** — Use `foreignId('user_id')` not `foreignUuid`
-- **`TransactionsSynced` hook** — Register in `AppServiceProvider::boot()`, create Listener class
-- **`routes/console.php`** — Spec says `app/Console/Kernel.php` which doesn't exist
-- **Infinite loop in AvalancheCalculator** — Add loop guard (max 600 iterations) and detect negative amortization
-- **`PayoffSchedule`** — Use `readonly class` with public properties
-- **Livewire view naming** — `debt-dashboard.blade.php` for `DebtDashboard` component
-- **`recovery_terms` JSONB** — Use `->json('recovery_terms')->nullable()`, cast to `'array'`
+- **Agent namespace mismatch** — spec vs codebase
+- **MCP registration location** — `routes/ai.php`, not `AppServiceProvider`
+- **Tool name derivation** — kebab-case auto, need explicit underscore override
+- **Tool handle() receives `Laravel\Mcp\Request`** — not Illuminate\Http\Request
+- **Agent tools for InsightsAgent/QueryAgent** — need to verify laravel/ai tool pattern via search-docs
+- **No `routes/ai.php`** — must create fresh

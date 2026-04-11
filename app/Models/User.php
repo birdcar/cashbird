@@ -76,6 +76,18 @@ class User extends Authenticatable
         return $this->hasMany(Debt::class);
     }
 
+    /** @return HasMany<Report, $this> */
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class);
+    }
+
+    /** @return HasMany<Insight, $this> */
+    public function insights(): HasMany
+    {
+        return $this->hasMany(Insight::class);
+    }
+
     /** @return HasOne<Budget, $this> */
     public function budget(): HasOne
     {

@@ -7,5 +7,7 @@
         <livewire:dashboard.spending-breakdown />
 
         <livewire:debt.payoff-timeline />
+
+        <livewire:dashboard.insights-summary />
     </div>
 </x-layouts.app>
