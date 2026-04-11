@@ -32,7 +32,7 @@ It's not a SaaS product or a startup -- it's a household tool that connects to o
 - **Tailwind CSS v4** -- warm OKLCH color palette (sand, amber, sage, terracotta) instead of the usual cold grays
 - **WorkOS AuthKit** -- authentication and fine-grained authorization for household sharing
 - **Teller API** -- bank account connections and transaction sync
-- **Laravel AI SDK** -- powers budget generation, transaction categorization, insights, reports, and the chat interface
+- **Laravel AI SDK + Cloudflare Workers AI** -- powers budget generation, transaction categorization, insights, reports, and the chat interface. Uses a two-tier model strategy: a capable model (GLM-4.7-Flash) for agentic tasks and a cheap model (Gemma 4) for classification. Routed through Cloudflare AI Gateway for caching and analytics
 - **PostgreSQL** -- primary database
 - **Redis** -- queues and caching
 - **Vite + Bun** -- frontend build tooling
@@ -68,7 +68,12 @@ Copy `.env.example` to `.env` (done by `composer setup`) and fill in:
 - **Database** -- `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` for your local PostgreSQL
 - **WorkOS** -- `WORKOS_CLIENT_ID`, `WORKOS_API_KEY`, `WORKOS_REDIRECT_URI` for authentication
 - **Teller** -- `TELLER_APP_ID`, cert/key paths, and signing secret for bank connections
-- **AI** -- whatever provider keys the Laravel AI SDK needs (OpenAI, Anthropic, etc.)
+- **AI (Cloudflare Workers AI)** -- the default and recommended provider:
+  1. Go to [Cloudflare dashboard](https://dash.cloudflare.com) > AI > AI Gateway and create a gateway
+  2. Set `CLOUDFLARE_AI_GATEWAY_URL` to `https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_name}/workers-ai/v1`
+  3. Create an API token at Cloudflare with Workers AI permissions and set `CLOUDFLARE_AI_API_TOKEN`
+  4. The default models are already configured: `glm-4.7-flash` for reasoning agents, `gemma-4-26b-a4b-it` for classification. Override with `AI_MODEL_SMARTEST` / `AI_MODEL_CHEAPEST` if needed.
+  5. To use a different provider (Anthropic, OpenAI, etc.), set `AI_PROVIDER=anthropic` and the corresponding API key
 
 ### Run
 
