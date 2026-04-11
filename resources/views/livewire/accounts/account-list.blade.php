@@ -1,11 +1,20 @@
 <div class="space-y-8">
         <div class="flex items-center justify-between">
             <h1 class="font-display text-fluid-lg font-bold text-sand-900">Accounts</h1>
-            <a href="{{ route('accounts.connect') }}"
-               class="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600">
-                <x-phosphor-plus-circle class="h-4 w-4" />
-                Connect Account
-            </a>
+            <div class="flex items-center gap-3">
+                <button wire:click="syncNow"
+                        wire:loading.attr="disabled"
+                        class="inline-flex items-center gap-2 rounded-lg border border-sand-300 bg-white px-4 py-2 text-sm font-medium text-sand-700 shadow-sm transition-colors hover:bg-sand-50 disabled:opacity-50">
+                    <x-phosphor-arrows-clockwise class="h-4 w-4" wire:loading.class="animate-spin" wire:target="syncNow" />
+                    <span wire:loading.remove wire:target="syncNow">Sync Now</span>
+                    <span wire:loading wire:target="syncNow">Syncing...</span>
+                </button>
+                <a href="{{ route('accounts.connect') }}"
+                   class="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600">
+                    <x-phosphor-plus-circle class="h-4 w-4" />
+                    Connect Account
+                </a>
+            </div>
         </div>
 
         @if($accounts->isEmpty())

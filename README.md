@@ -163,10 +163,9 @@ Teller provides bank account linking and transaction sync. AI features work with
    TELLER_APP_ID=app_...
    TELLER_CERT_PATH=/absolute/path/to/certificate.pem
    TELLER_KEY_PATH=/absolute/path/to/private_key.pem
-   TELLER_SIGNING_SECRET=...
    ```
 
-The mTLS cert/key are optional for local development -- the Teller client skips certificate attachment if the paths are empty. The signing secret is for webhook verification (the Teller webhook at `/webhooks/teller` *does* need public ingress, unlike WorkOS).
+The mTLS cert/key are optional for local development -- the Teller client skips certificate attachment if the paths are empty. Transactions sync automatically every hour (incremental) and every 6 hours (full), or on demand via the "Sync Now" button on the Accounts page.
 
 #### 4. Database
 
@@ -250,7 +249,7 @@ Cashbird is deployed with [Coolify](https://coolify.io/), a self-hosted PaaS.
    - Database: `DB_CONNECTION=pgsql`, `DB_HOST`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`
    - Redis: `REDIS_HOST`, `REDIS_PASSWORD` (if applicable)
    - WorkOS: `WORKOS_CLIENT_ID`, `WORKOS_API_KEY`, `WORKOS_REDIRECT_URI`, `WORKOS_ORGANIZATION_ID`
-   - Teller: `TELLER_APP_ID`, cert/key paths, signing secret
+   - Teller: `TELLER_APP_ID`, cert/key paths
    - AI: `CLOUDFLARE_AI_GATEWAY_URL`, `CLOUDFLARE_AI_API_TOKEN`
 4. **Post-deploy command** — Coolify runs this after each deploy:
    ```bash

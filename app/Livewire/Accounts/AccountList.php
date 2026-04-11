@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Accounts;
 
+use App\Jobs\SyncAllAccounts;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -13,6 +14,16 @@ use Livewire\Component;
 #[Title('Accounts')]
 class AccountList extends Component
 {
+    public function syncNow(): void
+    {
+        $user = auth()->user();
+        assert($user !== null);
+
+        SyncAllAccounts::dispatch($user);
+
+        session()->flash('success', 'Sync started. Transactions will update shortly.');
+    }
+
     public function render(): View
     {
         $user = auth()->user();

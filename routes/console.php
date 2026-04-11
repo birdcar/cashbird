@@ -4,7 +4,9 @@ use App\Jobs\AnalyzeSpendingInsights;
 use App\Jobs\GenerateBudgetProposal;
 use App\Jobs\GenerateMonthlyReport;
 use App\Jobs\SnapshotNetWorth;
+use App\Jobs\SyncAccountTransactions;
 use App\Jobs\SyncAllAccounts;
+use App\Models\Account;
 use App\Models\User;
 use App\Services\Debt\DebtSynchronizer;
 use Illuminate\Foundation\Inspiring;
@@ -20,7 +22,14 @@ Schedule::call(function () {
         ->chunkById(100, fn ($users) => $users->each(
             fn (User $user) => SyncAllAccounts::dispatch($user)
         ));
-})->daily()->name('sync-all-accounts')->withoutOverlapping();
+})->everySixHours()->name('sync-all-accounts')->withoutOverlapping();
+
+Schedule::call(function () {
+    Account::whereHas('enrollment', fn ($q) => $q->where('status', 'active'))
+        ->chunkById(100, fn ($accounts) => $accounts->each(
+            fn (Account $account) => SyncAccountTransactions::dispatch($account)
+        ));
+})->hourly()->name('sync-account-transactions')->withoutOverlapping();
 
 Schedule::call(function () {
     User::whereHas('budget', fn ($q) => $q->whereHas('periods', fn ($p) => $p->where('status', 'active')))
