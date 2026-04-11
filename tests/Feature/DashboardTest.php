@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
@@ -12,9 +13,19 @@ class DashboardTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_root_redirects_to_dashboard(): void
+    public function test_root_shows_landing_page_for_guests(): void
     {
         $response = $this->get('/');
+
+        $response->assertOk();
+        $response->assertViewIs('welcome');
+    }
+
+    public function test_root_redirects_authenticated_users_to_dashboard(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user, 'workos')->get('/');
 
         $response->assertRedirect('/dashboard');
     }
