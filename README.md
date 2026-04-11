@@ -4,7 +4,7 @@ A personal finance app for my household. It answers the two questions we ask eve
 
 It's not a SaaS product or a startup -- it's a household tool that connects to our bank accounts, categorizes transactions, builds budgets with AI, and gives us a shared view of our money. The interface is designed to be clear for everyone in the household, even if you don't think about money all day.
 
-<!-- TODO: screenshot of the dashboard -->
+![Cashbird landing page](public/images/landing-page.png)
 
 ## What it does
 
@@ -80,7 +80,7 @@ This starts the Laravel dev server, queue worker, log tail (Pail), and Vite dev 
 
 ## Tests
 
-156 PHPUnit tests covering authentication, budget calculations, transaction sync, debt projections, AI agents, sharing flows, and more.
+243 PHPUnit tests covering authentication, budget calculations, transaction sync, debt projections, AI agents, sharing flows, savings goals, net worth tracking, and more.
 
 ```bash
 # Run all tests
