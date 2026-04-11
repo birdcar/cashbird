@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\TellerController;
+use App\Http\Controllers\UndoController;
 use App\Livewire\Accounts\AccountList;
 use App\Livewire\Accounts\ConnectAccount;
 use App\Livewire\Budget\BudgetOverview;
@@ -17,7 +18,11 @@ use App\Livewire\Transactions\TransactionList;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return redirect()->route('dashboard');
+    if (auth('workos')->check()) {
+        return redirect()->route('dashboard');
+    }
+
+    return view('welcome');
 });
 
 Route::middleware('auth:workos')->group(function () {
@@ -46,6 +51,9 @@ Route::middleware('auth:workos')->group(function () {
 
     Route::get('/sharing', ManageSharing::class)->name('sharing.index');
     Route::get('/sharing/shared-with-me', SharedWithMe::class)->name('sharing.shared');
+
+    Route::post('/undo/proposal', [UndoController::class, 'undoProposalApprove'])->name('undo.proposal');
+    Route::post('/undo/sharing', [UndoController::class, 'undoSharingRevoke'])->name('undo.sharing');
 });
 
 Route::post('/webhooks/teller', [TellerController::class, 'webhook'])->name('teller.webhook');
