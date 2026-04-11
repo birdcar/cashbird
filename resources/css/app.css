@@ -6,19 +6,98 @@
 @source '../**/*.js';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    /* Typography */
+    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-display: 'Fraunces', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+
+    /* Brand palette — warm, earthy, approachable */
+    --color-sand-50: oklch(0.985 0.005 85);
+    --color-sand-100: oklch(0.965 0.012 80);
+    --color-sand-200: oklch(0.925 0.022 75);
+    --color-sand-300: oklch(0.870 0.035 70);
+    --color-sand-400: oklch(0.780 0.050 65);
+    --color-sand-500: oklch(0.680 0.055 60);
+    --color-sand-600: oklch(0.580 0.055 55);
+    --color-sand-700: oklch(0.480 0.045 50);
+    --color-sand-800: oklch(0.380 0.035 45);
+    --color-sand-900: oklch(0.280 0.025 40);
+    --color-sand-950: oklch(0.200 0.018 38);
+
+    --color-amber-50: oklch(0.985 0.018 85);
+    --color-amber-100: oklch(0.960 0.040 84);
+    --color-amber-200: oklch(0.920 0.080 80);
+    --color-amber-300: oklch(0.870 0.120 75);
+    --color-amber-400: oklch(0.810 0.155 68);
+    --color-amber-500: oklch(0.750 0.165 55);
+    --color-amber-600: oklch(0.670 0.160 48);
+    --color-amber-700: oklch(0.560 0.135 42);
+    --color-amber-800: oklch(0.470 0.105 40);
+    --color-amber-900: oklch(0.400 0.080 38);
+    --color-amber-950: oklch(0.280 0.055 35);
+
+    --color-sage-50: oklch(0.975 0.012 145);
+    --color-sage-100: oklch(0.950 0.022 145);
+    --color-sage-200: oklch(0.910 0.038 145);
+    --color-sage-300: oklch(0.845 0.055 145);
+    --color-sage-400: oklch(0.755 0.065 145);
+    --color-sage-500: oklch(0.650 0.060 145);
+    --color-sage-600: oklch(0.550 0.055 145);
+    --color-sage-700: oklch(0.460 0.045 145);
+    --color-sage-800: oklch(0.380 0.035 145);
+    --color-sage-900: oklch(0.310 0.025 145);
+    --color-sage-950: oklch(0.220 0.018 145);
+
+    --color-terracotta-50: oklch(0.980 0.015 35);
+    --color-terracotta-100: oklch(0.950 0.035 30);
+    --color-terracotta-200: oklch(0.900 0.065 28);
+    --color-terracotta-300: oklch(0.830 0.105 25);
+    --color-terracotta-400: oklch(0.740 0.140 22);
+    --color-terracotta-500: oklch(0.650 0.150 20);
+    --color-terracotta-600: oklch(0.560 0.140 18);
+    --color-terracotta-700: oklch(0.470 0.115 16);
+    --color-terracotta-800: oklch(0.400 0.090 15);
+    --color-terracotta-900: oklch(0.340 0.065 14);
+    --color-terracotta-950: oklch(0.240 0.045 13);
+
+    /* Fluid type scale */
+    --text-display-xl: clamp(2.5rem, 2rem + 2.5vw, 4rem);
+    --text-display-lg: clamp(1.875rem, 1.5rem + 1.5vw, 2.5rem);
+    --text-display-md: clamp(1.25rem, 1rem + 1vw, 1.5rem);
+
+    /* Spacing scale */
+    --spacing-18: 4.5rem;
+    --spacing-22: 5.5rem;
 }
 
 @layer base {
+    body {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
     a:focus-visible,
     button:focus-visible,
     input:focus-visible,
     select:focus-visible,
     textarea:focus-visible,
     [tabindex]:focus-visible {
-        outline: none;
-        box-shadow: 0 0 0 2px var(--color-gray-900);
+        outline: 2px solid var(--color-amber-500);
+        outline-offset: 2px;
         border-radius: 0.25rem;
+    }
+}
+
+@layer utilities {
+    .text-balance {
+        text-wrap: balance;
+    }
+
+    .text-fluid-xl { font-size: var(--text-display-xl); }
+    .text-fluid-lg { font-size: var(--text-display-lg); }
+    .text-fluid-md { font-size: var(--text-display-md); }
+
+    .animate-in {
+        opacity: 1 !important;
+        transform: translateY(0) !important;
     }
 }

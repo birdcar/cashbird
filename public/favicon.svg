@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Warm amber circle -->
+  <circle cx="16" cy="16" r="15" fill="#d4a030"/>
+  <!-- Bird body — a simple stylized bird in flight -->
+  <path d="M8 18 Q12 11 18 12 Q21 12.5 22 14 Q23 16 21 17 Q18 18 14 17.5 L11 21" fill="white" fill-opacity="0.95"/>
+  <!-- Wing detail -->
+  <path d="M13 14 Q16 9 22 10" stroke="white" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.6"/>
+  <!-- Eye -->
+  <circle cx="19.5" cy="13.5" r="1" fill="#d4a030"/>
+  <!-- Dollar accent — small, tucked bottom-right -->
+  <text x="23" y="25" font-family="Georgia, serif" font-size="7" font-weight="700" fill="white" opacity="0.8">$</text>
+</svg>

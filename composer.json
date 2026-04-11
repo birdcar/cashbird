@@ -8,6 +8,7 @@
     "require": {
         "php": "^8.4",
         "birdcar/authkit-laravel": "^0.3.0",
+        "codeat3/blade-phosphor-icons": "^2.4",
         "laravel/ai": "^0.5.0",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0",
