@@ -19,7 +19,6 @@ return [
     'api_key' => env('WORKOS_API_KEY'),
     'client_id' => env('WORKOS_CLIENT_ID'),
     'redirect_uri' => env('WORKOS_REDIRECT_URI', env('APP_URL').'/auth/callback'),
-    'webhook_secret' => env('WORKOS_WEBHOOK_SECRET'),
 
     /*
     |--------------------------------------------------------------------------
@@ -65,7 +64,7 @@ return [
         'audit_logs' => env('WORKOS_FEATURE_AUDIT_LOGS', false),
         'organizations' => env('WORKOS_FEATURE_ORGANIZATIONS', false),
         'impersonation' => env('WORKOS_FEATURE_IMPERSONATION', true),
-        'webhooks' => env('WORKOS_FEATURE_WEBHOOKS', true),
+        'webhooks' => env('WORKOS_FEATURE_WEBHOOKS', false),
         'widgets' => env('WORKOS_FEATURE_WIDGETS', true),
     ],
 

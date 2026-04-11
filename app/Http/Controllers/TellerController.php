@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Jobs\ProcessTellerWebhook;
 use App\Jobs\SyncAllAccounts;
 use App\Models\Institution;
 use App\Models\TellerEnrollment;
-use App\Services\Teller\TellerWebhookHandler;
 use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -49,16 +46,5 @@ class TellerController extends Controller
 
         return redirect()->route('accounts.index')
             ->with('success', 'Account connected. Syncing transactions...');
-    }
-
-    public function webhook(Request $request, TellerWebhookHandler $handler): JsonResponse
-    {
-        $handler->verifySignature($request);
-
-        ProcessTellerWebhook::dispatch(
-            $request->json()->all(),
-        );
-
-        return response()->json(['status' => 'ok']);
     }
 }

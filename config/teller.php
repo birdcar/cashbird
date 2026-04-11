@@ -37,15 +37,4 @@ return [
 
     'cert_path' => env('TELLER_CERT_PATH'),
     'key_path' => env('TELLER_KEY_PATH'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Webhook Signing Secret
-    |--------------------------------------------------------------------------
-    |
-    | Used to verify incoming webhook signatures from Teller.
-    |
-    */
-
-    'signing_secret' => env('TELLER_SIGNING_SECRET'),
 ];

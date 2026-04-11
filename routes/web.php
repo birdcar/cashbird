@@ -63,5 +63,3 @@ Route::middleware('auth:workos')->group(function () {
     Route::post('/undo/proposal', [UndoController::class, 'undoProposalApprove'])->name('undo.proposal');
     Route::post('/undo/sharing', [UndoController::class, 'undoSharingRevoke'])->name('undo.sharing');
 });
-
-Route::post('/webhooks/teller', [TellerController::class, 'webhook'])->name('teller.webhook');
