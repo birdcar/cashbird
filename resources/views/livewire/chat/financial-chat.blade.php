@@ -13,7 +13,7 @@
                         <span class="sr-only">{{ $message['role'] === 'user' ? 'You' : 'Cashbird' }}:</span>
                         @if($message['role'] === 'assistant')
                             <div class="prose prose-sm max-w-none">
-                                {!! Str::markdown($message['content']) !!}
+                                {!! Str::markdown($message['content'], ['html_input' => 'strip']) !!}
                             </div>
                         @else
                             <p class="text-sm">{{ $message['content'] }}</p>

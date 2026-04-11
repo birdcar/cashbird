@@ -33,6 +33,10 @@ class FinancialChat extends Component
 
         $this->messages[] = ['role' => 'assistant', 'content' => (string) $response];
         $this->question = '';
+
+        if (count($this->messages) > 50) {
+            $this->messages = array_slice($this->messages, -50);
+        }
     }
 
     public function render(): View

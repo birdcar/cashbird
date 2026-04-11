@@ -8,13 +8,19 @@
             <div class="space-y-3">
                 @php $maxAmount = $topCategories->max('total_amount') ?: 1 @endphp
                 @foreach($topCategories as $cat)
+                    @php $pct = (int) round(($cat['total_amount'] / $maxAmount) * 100) @endphp
                     <div>
                         <div class="flex items-center justify-between text-sm">
                             <span class="font-medium text-gray-700">{{ $cat['category_name'] ?? 'Uncategorized' }}</span>
                             <span class="text-gray-500">${{ number_format($cat['total_amount'] / 100, 2) }}</span>
                         </div>
-                        <div class="mt-1 h-2 w-full rounded-full bg-gray-100">
-                            <div class="h-2 rounded-full bg-gray-800" style="width: {{ ($cat['total_amount'] / $maxAmount) * 100 }}%"></div>
+                        <div class="mt-1 h-2 w-full rounded-full bg-gray-100"
+                             role="progressbar"
+                             aria-valuenow="{{ $pct }}"
+                             aria-valuemin="0"
+                             aria-valuemax="100"
+                             aria-label="{{ $cat['category_name'] ?? 'Uncategorized' }}: ${{ number_format($cat['total_amount'] / 100, 2) }}">
+                            <div class="h-2 rounded-full bg-gray-800" style="width: {{ $pct }}%"></div>
                         </div>
                     </div>
                 @endforeach
@@ -28,16 +34,18 @@
         @if(collect($monthOverMonth)->sum('total_amount') === 0)
             <p class="text-sm text-gray-500">No spending history yet.</p>
         @else
-            <div class="flex items-end gap-2" style="height: 120px;">
-                @php $maxMonth = collect($monthOverMonth)->max('total_amount') ?: 1 @endphp
-                @foreach($monthOverMonth as $month)
-                    <div class="flex flex-1 flex-col items-center gap-1">
-                        <div class="w-full rounded-t bg-gray-800"
-                             style="height: {{ $maxMonth > 0 ? ($month['total_amount'] / $maxMonth) * 100 : 0 }}px">
+            @php $maxMonth = collect($monthOverMonth)->max('total_amount') ?: 1 @endphp
+            <div role="img" aria-label="Monthly spending trend: {{ collect($monthOverMonth)->map(fn($m) => \Carbon\Carbon::parse($m['month'])->format('M') . ' $' . number_format($m['total_amount'] / 100, 2))->join(', ') }}">
+                <div class="flex items-end gap-2" style="height: 120px;" aria-hidden="true">
+                    @foreach($monthOverMonth as $month)
+                        <div class="flex flex-1 flex-col items-center gap-1">
+                            <div class="w-full rounded-t bg-gray-800"
+                                 style="height: {{ $maxMonth > 0 ? ($month['total_amount'] / $maxMonth) * 100 : 0 }}px">
+                            </div>
+                            <span class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($month['month'])->format('M') }}</span>
                         </div>
-                        <span class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($month['month'])->format('M') }}</span>
-                    </div>
-                @endforeach
+                    @endforeach
+                </div>
             </div>
         @endif
     </div>

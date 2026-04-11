@@ -18,10 +18,10 @@
     </div>
 
     <div class="mt-4 flex gap-2">
-        <button wire:click="approve" class="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-800">
+        <button wire:click="approve" class="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-800" aria-label="Approve budget adjustment proposal">
             Approve
         </button>
-        <button wire:click="reject" class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
+        <button wire:click="reject" class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50" aria-label="Reject budget adjustment proposal">
             Reject
         </button>
     </div>

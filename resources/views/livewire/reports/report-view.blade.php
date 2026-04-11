@@ -6,7 +6,7 @@
 
     <div class="rounded-lg border border-gray-200 bg-white p-6">
         <div class="prose max-w-none text-gray-900">
-            {!! Str::markdown($report->content) !!}
+            {!! Str::markdown($report->content, ['html_input' => 'strip']) !!}
         </div>
     </div>
 

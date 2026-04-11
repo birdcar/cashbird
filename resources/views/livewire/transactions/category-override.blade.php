@@ -1,5 +1,5 @@
 <div class="inline">
-    <button wire:click="openModal" class="text-xs text-gray-500 underline hover:text-gray-700">
+    <button wire:click="openModal" class="text-xs text-gray-500 underline hover:text-gray-700" aria-label="Change category for this transaction">
         Change
     </button>
 
@@ -10,6 +10,21 @@
             role="dialog"
             aria-modal="true"
             aria-labelledby="category-override-title"
+            x-data
+            x-init="
+                const focusable = $el.querySelectorAll('button, select, [tabindex]:not([tabindex=\'-1\'])');
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                first && first.focus();
+                $el.addEventListener('keydown', function(e) {
+                    if (e.key !== 'Tab') return;
+                    if (e.shiftKey) {
+                        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+                    } else {
+                        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+                    }
+                });
+            "
         >
             <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
                 <h3 id="category-override-title" class="mb-4 text-lg font-semibold text-gray-900">Override Category</h3>

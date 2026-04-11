@@ -16,7 +16,7 @@ use Laravel\Ai\Promptable;
 use Stringable;
 
 #[UseSmartestModel]
-#[MaxSteps(5)]
+#[MaxSteps(8)]
 class ReportAgent implements Agent, HasTools
 {
     use Promptable;

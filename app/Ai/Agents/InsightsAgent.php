@@ -18,7 +18,7 @@ use Laravel\Ai\Promptable;
 use Stringable;
 
 #[UseSmartestModel]
-#[MaxSteps(5)]
+#[MaxSteps(8)]
 class InsightsAgent implements Agent, HasStructuredOutput, HasTools
 {
     use Promptable;

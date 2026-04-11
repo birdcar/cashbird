@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ai\Tools;
 
+use App\Models\Transaction;
 use App\Models\User;
 use App\Support\Money;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -33,18 +34,33 @@ class GetBudgetStatus implements Tool
 
         $allocations = $period->allocations()->with('category')->get();
 
+        $monthStart = $period->month->startOfMonth();
+        $monthEnd = $period->month->endOfMonth();
+
+        $spentByCategory = Transaction::where('user_id', $this->userId)
+            ->where('amount', '<', 0)
+            ->whereBetween('date', [$monthStart, $monthEnd])
+            ->whereNotNull('category_id')
+            ->selectRaw('category_id, SUM(ABS(amount)) as total_spent')
+            ->groupBy('category_id')
+            ->pluck('total_spent', 'category_id');
+
         return json_encode([
             'month' => $period->month->format('F Y'),
             'total_income' => '$'.Money::format($period->total_income),
             'total_allocated' => '$'.Money::format($period->total_allocated),
-            'allocations' => $allocations->map(fn ($a) => [
-                'category' => $a->category?->name ?? 'Unknown',
-                'allocated' => '$'.Money::format($a->allocated_amount),
-                'spent' => '$'.Money::format($a->spent_amount ?? 0),
-                'remaining' => '$'.Money::format(($a->allocated_amount) - ($a->spent_amount ?? 0)),
-                'is_fixed' => $a->is_fixed,
-                'is_locked' => $a->is_locked,
-            ])->values(),
+            'allocations' => $allocations->map(function ($a) use ($spentByCategory) {
+                $spent = (int) ($spentByCategory[$a->category_id] ?? 0);
+
+                return [
+                    'category' => $a->category?->name ?? 'Unknown',
+                    'allocated' => '$'.Money::format($a->allocated_amount),
+                    'spent' => '$'.Money::format($spent),
+                    'remaining' => '$'.Money::format($a->allocated_amount - $spent),
+                    'is_fixed' => $a->is_fixed,
+                    'is_locked' => $a->is_locked,
+                ];
+            })->values(),
         ]);
     }
 

@@ -19,6 +19,7 @@
         wire:click="save"
         type="button"
         class="rounded bg-gray-900 px-3 py-1 text-xs text-white hover:bg-gray-800"
+        aria-label="Save allocation"
     >
         Save
     </button>
