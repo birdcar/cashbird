@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b816bff599dda53f63218b2e3346242d",
+    "content-hash": "7b701527a6da41dcb2231e49b5406a48",
     "packages": [
         {
             "name": "birdcar/authkit-laravel",
-            "version": "v0.4.2",
+            "version": "v0.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/birdcar/authkit-laravel.git",
-                "reference": "cce3eca48d0e7ce6c6c50f79004b00da4d46168e"
+                "reference": "b0be66c44ad91579018aa46d5ade03ebab734cdb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/birdcar/authkit-laravel/zipball/cce3eca48d0e7ce6c6c50f79004b00da4d46168e",
-                "reference": "cce3eca48d0e7ce6c6c50f79004b00da4d46168e",
+                "url": "https://api.github.com/repos/birdcar/authkit-laravel/zipball/b0be66c44ad91579018aa46d5ade03ebab734cdb",
+                "reference": "b0be66c44ad91579018aa46d5ade03ebab734cdb",
                 "shasum": ""
             },
             "require": {
@@ -68,9 +68,9 @@
             ],
             "support": {
                 "issues": "https://github.com/birdcar/authkit-laravel/issues",
-                "source": "https://github.com/birdcar/authkit-laravel/tree/v0.4.2"
+                "source": "https://github.com/birdcar/authkit-laravel/tree/v0.7.0"
             },
-            "time": "2026-04-11T19:56:54+00:00"
+            "time": "2026-04-11T21:05:19+00:00"
         },
         {
             "name": "blade-ui-kit/blade-icons",
