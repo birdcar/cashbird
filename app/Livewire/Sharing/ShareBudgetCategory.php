@@ -111,6 +111,7 @@ class ShareBudgetCategory extends Component
         });
 
         $this->reset('email');
+        session()->flash('success', 'Category shared.');
         $this->dispatch('category-shared');
     }
 

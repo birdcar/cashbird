@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Livewire\Transactions;
 
 use App\Models\Category;
-use App\Models\Transaction;
 use App\Services\Categorization\CategoryResolver;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -13,7 +12,9 @@ use Livewire\Component;
 class CategoryOverride extends Component
 {
     public string $transactionId;
+
     public string $selectedCategoryId = '';
+
     public bool $showModal = false;
 
     public function mount(string $transactionId): void
@@ -39,6 +40,7 @@ class CategoryOverride extends Component
         $resolver->saveOverride($transaction, $category, $user->id);
 
         $this->showModal = false;
+        session()->flash('success', 'Category updated.');
         $this->dispatch('category-updated');
     }
 

@@ -44,6 +44,10 @@ class ProposalReview extends Component
             'reviewed_at' => now(),
         ]);
 
+        session()->flash('success', 'Budget updated.');
+        session()->flash('undo_route', route('undo.proposal'));
+        session()->put('undo_proposal_id', $proposal->id);
+        session()->put('undo_proposal_at', now());
         $this->dispatch('proposal-reviewed');
     }
 
@@ -59,6 +63,7 @@ class ProposalReview extends Component
             'reviewed_at' => now(),
         ]);
 
+        session()->flash('success', 'Suggestion dismissed.');
         $this->dispatch('proposal-reviewed');
     }
 

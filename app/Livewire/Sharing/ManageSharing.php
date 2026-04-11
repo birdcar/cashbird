@@ -11,9 +11,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('components.layouts.app')]
+#[Title('Sharing')]
 class ManageSharing extends Component
 {
     /** @return Collection<int, SharingInvitation> */
@@ -55,6 +57,10 @@ class ManageSharing extends Component
             }
         });
 
+        session()->flash('success', 'Access revoked.');
+        session()->flash('undo_route', route('undo.sharing'));
+        session()->put('undo_invitation_id', $invitation->id);
+        session()->put('undo_invitation_at', now());
         unset($this->invitations);
     }
 
