@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Livewire\Savings;
 
 use App\Enums\GoalStatus;
+use App\Enums\SavingsStage;
 use App\Models\SavingsGoal;
 use App\Services\Budget\GoalProgressCalculator;
 use App\Services\Budget\SavingsStageAdvisor;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -25,28 +28,53 @@ class SavingsGoalsList extends Component
         $advisor->ensureSystemGoal($user->id);
     }
 
-    public function render(GoalProgressCalculator $calculator, SavingsStageAdvisor $advisor): View
+    /** @return Collection<int, SavingsGoal> */
+    #[Computed]
+    public function goals(): Collection
     {
         $user = auth()->user();
         abort_if($user === null, 401);
 
-        $goals = SavingsGoal::where('user_id', $user->id)
+        return SavingsGoal::where('user_id', $user->id)
             ->where('status', GoalStatus::Active)
             ->orderBy('priority')
             ->get();
+    }
+
+    #[Computed]
+    public function stage(): SavingsStage
+    {
+        $user = auth()->user();
+        abort_if($user === null, 401);
+
+        return app(SavingsStageAdvisor::class)->currentStage($user->id);
+    }
+
+    #[Computed]
+    public function systemGoal(): ?SavingsGoal
+    {
+        $user = auth()->user();
+        abort_if($user === null, 401);
+
+        return SavingsGoal::where('user_id', $user->id)
+            ->where('is_system', true)
+            ->where('status', GoalStatus::Active)
+            ->first();
+    }
+
+    public function render(GoalProgressCalculator $calculator): View
+    {
+        $goals = $this->goals;
 
         $goalsWithProgress = $goals->map(fn (SavingsGoal $goal) => [
             'goal' => $goal,
             'progress' => $calculator->compute($goal),
         ]);
 
-        $stage = $advisor->currentStage($user->id);
-        $systemGoal = $advisor->ensureSystemGoal($user->id);
-
         return view('livewire.savings.savings-goals-list', [
             'goalsWithProgress' => $goalsWithProgress,
-            'stage' => $stage,
-            'systemGoal' => $systemGoal,
+            'stage' => $this->stage,
+            'systemGoal' => $this->systemGoal,
             'hasGoals' => $goals->isNotEmpty(),
         ]);
     }

@@ -66,7 +66,7 @@
             </div>
             <div class="divide-y divide-sand-100">
                 @foreach($debts as $debt)
-                    <a wire:key="{{ $debt->id }}" href="{{ route('debt.show', $debt) }}" class="flex items-center justify-between px-6 py-4 transition-colors hover:bg-sand-50" wire:navigate aria-label="{{ $debt->name }} — view debt details">
+                    <a wire:key="debt-{{ $debt->id }}" href="{{ route('debt.show', $debt) }}" class="flex items-center justify-between px-6 py-4 transition-colors hover:bg-sand-50" wire:navigate aria-label="{{ $debt->name }} — view debt details">
                         <div>
                             <p class="font-medium text-sand-900">{{ $debt->name }}</p>
                             <p class="text-sm text-sand-500">{{ $debt->lender ?? ucfirst(str_replace('_', ' ', $debt->type)) }} &middot; {{ number_format((float) $debt->apr, 2) }}% interest rate</p>

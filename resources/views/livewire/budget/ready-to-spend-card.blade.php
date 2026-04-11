@@ -1,5 +1,5 @@
-<div class="rounded-2xl border border-amber-200 bg-amber-50 p-8">
-    <p class="mb-1 text-sm font-medium tracking-wide text-amber-700 uppercase">Safe to Spend Today</p>
+<div class="rounded-xl border border-amber-200 bg-amber-50 p-8">
+    <p class="mb-1 text-sm font-medium uppercase tracking-wide text-amber-700">Safe to Spend Today</p>
 
     @if($hasData)
         <div class="mt-2 mb-6">
@@ -17,12 +17,12 @@
 
         <div class="grid gap-6 sm:grid-cols-2 border-t border-amber-200 pt-6">
             <div>
-                <p class="text-xs font-medium text-amber-700 uppercase tracking-wide">Left this month</p>
-                <p class="mt-1 text-2xl font-semibold {{ $totalRemaining >= 0 ? 'text-sand-900' : 'text-terracotta-600' }}">${{ number_format($totalRemaining / 100, 2) }}</p>
+                <p class="text-xs font-medium uppercase tracking-wide text-amber-700">Left this month</p>
+                <p class="mt-1 font-display text-2xl font-semibold {{ $totalRemaining >= 0 ? 'text-sand-900' : 'text-terracotta-600' }}">${{ number_format($totalRemaining / 100, 2) }}</p>
             </div>
             <div>
-                <p class="text-xs font-medium text-amber-700 uppercase tracking-wide">Budget used <x-help-tip text="How much of your total monthly budget has been spent so far." /></p>
-                <p class="mt-1 text-2xl font-semibold text-sand-900">
+                <p class="text-xs font-medium uppercase tracking-wide text-amber-700">Budget used <x-help-tip text="How much of your total monthly budget has been spent so far." /></p>
+                <p class="mt-1 font-display text-2xl font-semibold text-sand-900">
                     @if($totalAllocated > 0)
                         {{ round((($totalAllocated - $totalRemaining) / $totalAllocated) * 100) }}%
                     @else

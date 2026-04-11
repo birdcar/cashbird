@@ -6,11 +6,13 @@ namespace App\Ai\Agents;
 
 use App\Models\Category;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Laravel\Ai\Attributes\UseSmartestModel;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Promptable;
 use Stringable;
 
+#[UseSmartestModel]
 class CategorizationAgent implements Agent, HasStructuredOutput
 {
     use Promptable;
@@ -72,7 +74,9 @@ PROMPT;
         if (! empty($this->overrideExamples)) {
             $instructions .= "\n\nUSER OVERRIDES (use these unconditionally when the merchant matches):\n";
             foreach ($this->overrideExamples as $merchant => $category) {
-                $instructions .= "Merchant: {$merchant} → {$category}\n";
+                $safeMerchant = preg_replace('/[\r\n]+/', ' ', (string) $merchant);
+                $safeCategory = preg_replace('/[\r\n]+/', ' ', (string) $category);
+                $instructions .= "Merchant: {$safeMerchant} → {$safeCategory}\n";
             }
         }
 

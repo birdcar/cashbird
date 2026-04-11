@@ -49,8 +49,14 @@ class BudgetAgent implements Agent, HasStructuredOutput
 
     public function instructions(): Stringable|string
     {
-        $instructions = <<<'PROMPT'
+        $poolDollars = number_format($this->discretionaryPool / 100, 2);
+
+        $instructions = <<<PROMPT
 You are a personal finance budget advisor. Given a user's financial context, allocate a discretionary spending pool across categories.
+
+DISCRETIONARY POOL: {$this->discretionaryPool} cents (\${$poolDollars})
+
+CRITICAL: If the pool is \$0 or negative, return an empty allocations array immediately. Skip all other rules.
 
 ALLOCATION PRIORITIES (in order)
 1. Essential variable expenses first — groceries, gas, healthcare, transportation. Base on historical averages, scale down proportionally if pool is insufficient.
@@ -63,15 +69,10 @@ RULES
 - Every dollar must be allocated. Total of all amounts must equal the discretionary pool exactly.
 - Return amounts in cents (integers). Do not return fractional cents.
 - Never allocate negative amounts.
-- If the pool is $0 or negative, return an empty array.
+- If rounding leaves a remainder, add it to the largest allocation.
 - Use only category IDs from the provided list.
 - Rationale must be one sentence, max 100 characters.
 PROMPT;
-
-        if ($this->discretionaryPool > 0) {
-            $poolDollars = number_format($this->discretionaryPool / 100, 2);
-            $instructions .= "\n\nDISCRETIONARY POOL: {$this->discretionaryPool} cents (\${$poolDollars})";
-        }
 
         if (! empty($this->categories)) {
             $instructions .= "\n\nAVAILABLE CATEGORIES (use these IDs only):\n";

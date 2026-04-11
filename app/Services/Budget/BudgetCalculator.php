@@ -13,6 +13,7 @@ use App\Models\RecurringCharge;
 use App\Models\Transaction;
 use App\Services\Categorization\SpendingAggregator;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class BudgetCalculator
@@ -171,13 +172,14 @@ class BudgetCalculator
             return;
         }
 
-        BudgetAllocation::create([
-            'budget_period_id' => $period->id,
-            'category_id' => $savingsCategory->id,
-            'allocated_amount' => $savingsAmount,
-            'is_fixed' => true,
-            'lock_reason' => 'savings_target',
-        ]);
+        BudgetAllocation::updateOrCreate(
+            ['budget_period_id' => $period->id, 'category_id' => $savingsCategory->id],
+            [
+                'allocated_amount' => $savingsAmount,
+                'is_fixed' => true,
+                'lock_reason' => 'savings_target',
+            ],
+        );
     }
 
     private function allocateFromRecurring(BudgetPeriod $period, int $userId): void
@@ -192,13 +194,15 @@ class BudgetCalculator
             ->value('id');
 
         foreach ($recurring as $charge) {
-            BudgetAllocation::create([
-                'budget_period_id' => $period->id,
-                'category_id' => $charge->category_id ?? $fallbackCategoryId,
-                'allocated_amount' => $charge->average_amount,
-                'is_fixed' => true,
-                'lock_reason' => "recurring: \${$this->formatCents($charge->average_amount)}/mo detected",
-            ]);
+            $categoryId = $charge->category_id ?? $fallbackCategoryId;
+            BudgetAllocation::updateOrCreate(
+                ['budget_period_id' => $period->id, 'category_id' => $categoryId],
+                [
+                    'allocated_amount' => $charge->average_amount,
+                    'is_fixed' => true,
+                    'lock_reason' => "recurring: \${$this->formatCents($charge->average_amount)}/mo detected",
+                ],
+            );
         }
     }
 
@@ -248,7 +252,7 @@ class BudgetCalculator
         $this->distributeProportionally($period, $wantsCandidates, $wantsRemaining);
     }
 
-    private function distributeProportionally(BudgetPeriod $period, $candidates, int $pool): void
+    private function distributeProportionally(BudgetPeriod $period, Collection $candidates, int $pool): void
     {
         if ($candidates->isEmpty() || $pool <= 0) {
             return;
@@ -256,7 +260,7 @@ class BudgetCalculator
 
         $totalHistorical = $candidates->sum('total_amount');
 
-        if ($totalHistorical == 0) {
+        if ($totalHistorical === 0) {
             $perCategory = (int) floor($pool / $candidates->count());
             foreach ($candidates as $cat) {
                 BudgetAllocation::create([

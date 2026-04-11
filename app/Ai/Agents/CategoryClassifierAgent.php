@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Ai\Agents;
 
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Laravel\Ai\Attributes\UseSmartestModel;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Promptable;
 use Stringable;
 
+#[UseSmartestModel]
 class CategoryClassifierAgent implements Agent, HasStructuredOutput
 {
     use Promptable;
@@ -27,6 +29,10 @@ class CategoryClassifierAgent implements Agent, HasStructuredOutput
 
     public function instructions(): Stringable|string
     {
+        if (empty($this->categories)) {
+            return 'No categories to classify. Return an empty classifications array.';
+        }
+
         $categoryList = collect($this->categories)
             ->map(fn ($c) => "- {$c['category_path']} (id: {$c['category_id']})")
             ->join("\n");
@@ -44,7 +50,7 @@ When uncertain, classify as "want" — it's safer to budget conservatively for d
 CATEGORIES TO CLASSIFY:
 {$categoryList}
 
-Return a JSON array of classifications for every category listed above.
+Return a JSON array with exactly one classification for every category listed above. Do not skip any.
 PROMPT;
     }
 
@@ -53,7 +59,7 @@ PROMPT;
     {
         return [
             'classifications' => $schema->array()->required()
-                ->items([
+                ->items($schema->object([
                     'category_id' => $schema->string()->required()
                         ->description('The UUID of the category'),
                     'classification' => $schema->string()->required()
@@ -61,7 +67,7 @@ PROMPT;
                         ->description('Budget classification'),
                     'rationale' => $schema->string()->required()
                         ->description('Brief reason for this classification'),
-                ]),
+                ])),
         ];
     }
 }

@@ -60,7 +60,7 @@ class DebtSavingsCoordinatorTest extends TestCase
             'priority' => 0,
         ]);
 
-        $proposal = $this->coordinator->checkAndPropose($this->user->id);
+        $proposal = $this->coordinator->checkAndPropose($this->user);
 
         $this->assertNotNull($proposal);
         $this->assertEquals('debt_coordinator', $proposal->proposed_by);
@@ -81,7 +81,7 @@ class DebtSavingsCoordinatorTest extends TestCase
             'status' => GoalStatus::Active,
         ]);
 
-        $result = $this->coordinator->checkAndPropose($this->user->id);
+        $result = $this->coordinator->checkAndPropose($this->user);
 
         $this->assertNull($result);
     }
@@ -93,7 +93,7 @@ class DebtSavingsCoordinatorTest extends TestCase
             'minimum_payment' => 20000,
         ]);
 
-        $result = $this->coordinator->checkAndPropose($this->user->id);
+        $result = $this->coordinator->checkAndPropose($this->user);
 
         $this->assertNull($result);
     }
@@ -111,10 +111,10 @@ class DebtSavingsCoordinatorTest extends TestCase
             'priority' => 0,
         ]);
 
-        $first = $this->coordinator->checkAndPropose($this->user->id);
+        $first = $this->coordinator->checkAndPropose($this->user);
         $this->assertNotNull($first);
 
-        $second = $this->coordinator->checkAndPropose($this->user->id);
+        $second = $this->coordinator->checkAndPropose($this->user);
         $this->assertNull($second);
 
         $this->assertEquals(1, BudgetProposal::where('proposed_by', 'debt_coordinator')->count());
@@ -127,7 +127,7 @@ class DebtSavingsCoordinatorTest extends TestCase
             'status' => GoalStatus::Active,
         ]);
 
-        $result = $this->coordinator->checkAndPropose($this->user->id);
+        $result = $this->coordinator->checkAndPropose($this->user);
 
         $this->assertNull($result);
     }
@@ -152,7 +152,7 @@ class DebtSavingsCoordinatorTest extends TestCase
             'priority' => 0,
         ]);
 
-        $proposal = $this->coordinator->checkAndPropose($this->user->id);
+        $proposal = $this->coordinator->checkAndPropose($this->user);
 
         $this->assertNotNull($proposal);
         $this->assertStringContainsString('Emergency Fund', $proposal->changes[0]['rationale']);

@@ -33,9 +33,10 @@
             @error('target_date') <p class="mt-1 text-sm text-terracotta-600">{{ $message }}</p> @enderror
         </div>
 
-        <div class="flex justify-stretch sm:justify-end">
-            <button type="submit" class="w-full rounded-lg bg-amber-500 px-6 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600 sm:w-auto">
-                Save Goal
+        <div class="flex sm:justify-end">
+            <button type="submit" wire:loading.attr="disabled" class="w-full rounded-lg bg-amber-500 px-6 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600 disabled:opacity-50 sm:w-auto">
+                <span wire:loading.remove>Save Goal</span>
+                <span wire:loading>Saving…</span>
             </button>
         </div>
     </form>

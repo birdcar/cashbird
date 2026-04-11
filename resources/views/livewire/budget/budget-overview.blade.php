@@ -19,13 +19,13 @@
                     You have {{ $proposals->count() }} pending budget suggestion(s) to review.
                 </p>
                 @foreach($proposals as $proposal)
-                    <livewire:budget.proposal-review :proposal-id="$proposal->id" :key="'prop-'.$proposal->id" />
+                    <livewire:budget.proposal-review :proposal-id="$proposal->id" wire:key="prop-{{ $proposal->id }}" />
                 @endforeach
             </div>
         @endif
 
         {{-- Stats floating free --}}
-        <div class="grid gap-x-8 gap-y-2 sm:grid-cols-4">
+        <div class="grid gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
             <div>
                 <p class="text-xs font-medium uppercase tracking-wide text-sand-400">Monthly income</p>
                 <p class="mt-1 font-display text-2xl font-semibold text-sand-900">${{ number_format($period->total_income / 100, 2) }}</p>
@@ -48,8 +48,8 @@
         <div>
             <div class="flex h-3 overflow-hidden rounded-full">
                 <div class="bg-amber-400" style="width: {{ $needsPercent }}%"></div>
-                <div class="bg-sage-400" style="width: {{ $wantsPercent }}%"></div>
-                <div class="bg-terracotta-400" style="width: {{ $savingsPercent }}%"></div>
+                <div class="bg-sand-300" style="width: {{ $wantsPercent }}%"></div>
+                <div class="bg-sage-400" style="width: {{ $savingsPercent }}%"></div>
             </div>
             <div class="mt-1.5 flex items-center justify-between text-xs text-sand-400">
                 <span>Needs {{ $needsPercent }}% <span class="text-sand-300">(target 50%)</span></span>
@@ -58,7 +58,7 @@
             </div>
         </div>
 
-        <div class="grid gap-x-8 gap-y-2 sm:grid-cols-1">
+        <div>
             <div>
                 <p class="text-xs font-medium uppercase tracking-wide text-sand-400">Unbudgeted <x-help-tip text="Income that hasn't been assigned to a category yet. Ideally this is close to zero." /></p>
                 <p class="mt-1 font-display text-2xl font-semibold {{ ($period->total_income - $period->total_allocated) >= 0 ? 'text-sage-600' : 'text-terracotta-600' }}">

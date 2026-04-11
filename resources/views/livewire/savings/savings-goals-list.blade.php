@@ -55,7 +55,7 @@
                     Based on your finances, we recommend starting with a
                     ${{ number_format($systemGoal->target_amount / 100, 2) }} emergency fund.
                 </p>
-                <button wire:click="createSystemGoal" class="rounded-lg bg-amber-500 px-6 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600">
+                <button wire:click="createSystemGoal" wire:loading.attr="disabled" class="rounded-lg bg-amber-500 px-6 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600 disabled:opacity-50">
                     Create this goal
                 </button>
             @else
@@ -70,8 +70,14 @@
                 @php
                     $goal = $item['goal'];
                     $prog = $item['progress'];
+                    $barColor = match($prog['on_track']) {
+                        'on_track' => 'bg-sage-500',
+                        'at_risk' => 'bg-amber-500',
+                        'behind' => 'bg-terracotta-500',
+                        default => 'bg-amber-500',
+                    };
                 @endphp
-                <div class="rounded-xl border border-sand-200 bg-white p-6">
+                <div wire:key="goal-{{ $goal->id }}" class="rounded-xl border border-sand-200 bg-white p-6">
                     <div class="flex items-start justify-between">
                         <div>
                             <h3 class="font-display text-lg font-semibold text-sand-900">{{ $goal->name }}</h3>
@@ -85,15 +91,15 @@
                         <div class="flex items-center gap-2">
                             @if($prog['on_track'] === 'on_track')
                                 <span class="inline-flex items-center gap-1 rounded-full bg-sage-100 px-2.5 py-0.5 text-xs font-medium text-sage-700">
-                                    <x-phosphor-check-circle class="h-3.5 w-3.5" /> On track
+                                    <x-phosphor-check-circle class="h-3.5 w-3.5" aria-hidden="true" /> On track
                                 </span>
                             @elseif($prog['on_track'] === 'at_risk')
                                 <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">
-                                    <x-phosphor-clock class="h-3.5 w-3.5" /> At risk
+                                    <x-phosphor-clock class="h-3.5 w-3.5" aria-hidden="true" /> At risk
                                 </span>
                             @elseif($prog['on_track'] === 'behind')
                                 <span class="inline-flex items-center gap-1 rounded-full bg-terracotta-100 px-2.5 py-0.5 text-xs font-medium text-terracotta-700">
-                                    <x-phosphor-warning class="h-3.5 w-3.5" /> Behind
+                                    <x-phosphor-warning class="h-3.5 w-3.5" aria-hidden="true" /> Behind
                                 </span>
                             @endif
                         </div>
@@ -113,7 +119,7 @@
                              aria-valuemin="0"
                              aria-valuemax="100"
                              aria-label="{{ $goal->name }}: {{ $prog['progress'] }}% complete">
-                            <div class="h-2.5 rounded-full bg-amber-500 transition-all" style="width: {{ $prog['progress'] }}%"></div>
+                            <div class="h-2.5 rounded-full {{ $barColor }} transition-all" style="width: {{ $prog['progress'] }}%"></div>
                         </div>
                     </div>
 

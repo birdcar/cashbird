@@ -7,6 +7,7 @@ namespace App\Services\Budget;
 use App\Enums\BudgetCategory;
 use App\Models\Category;
 use App\Models\CategoryClassification;
+use Illuminate\Support\Str;
 
 class CategoryClassifier
 {
@@ -22,6 +23,7 @@ class CategoryClassifier
 
         $allCategories = Category::whereNotNull('parent_id')->with('parent')->get();
         $result = [];
+        $toInsert = [];
 
         foreach ($allCategories as $category) {
             $catId = $category->id;
@@ -35,12 +37,19 @@ class CategoryClassifier
             $classification = $this->defaultClassification($category);
             $result[$catId] = $classification;
 
-            CategoryClassification::create([
+            $toInsert[] = [
+                'id' => Str::uuid()->toString(),
                 'user_id' => $userId,
                 'category_id' => $catId,
-                'classification' => $classification,
+                'classification' => $classification->value,
                 'is_ai_assigned' => true,
-            ]);
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        if (! empty($toInsert)) {
+            CategoryClassification::insert($toInsert);
         }
 
         return $result;

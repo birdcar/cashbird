@@ -29,8 +29,12 @@ class InsightsAgent implements Agent, HasStructuredOutput, HasTools
 
     public function instructions(): Stringable|string
     {
-        return <<<'PROMPT'
+        $today = now()->format('Y-m-d');
+
+        return <<<PROMPT
 Analyze the user's financial data and identify actionable insights.
+
+Today's date is {$today}. Use this to calculate relative timeframes like "less than 3 months to payoff."
 
 Use the available tools to gather spending trends, subscription data, budget status, and debt information.
 
@@ -43,7 +47,7 @@ Insight types:
 - unused_subscription: Recurring charge for a service that may not be needed
 - spending_spike: Category spending significantly above recent average
 - savings_opportunity: Category consistently under budget (reallocation potential)
-- debt_milestone: Approaching payoff on a debt (<$500 remaining or <3 months)
+- debt_milestone: Approaching payoff on a debt (<\$500 remaining or <3 months)
 - anomaly: Unusual transaction (much larger or smaller than typical for that merchant)
 
 Severity levels:
@@ -52,6 +56,7 @@ Severity levels:
 - action_required: Should address soon
 
 Return between 0 and 5 insights. Quality over quantity — only surface genuinely useful observations.
+If data is insufficient to generate any insights, return an empty array.
 PROMPT;
     }
 

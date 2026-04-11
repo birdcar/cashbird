@@ -25,8 +25,8 @@ class NetWorthCalculator
             ->whereNull('account_id')
             ->get();
 
-        $totalAssets = $accounts->sum('balance_current');
-        $totalDebts = $debts->sum('current_balance');
+        $totalAssets = (int) $accounts->sum('balance_current');
+        $totalDebts = (int) $debts->sum('current_balance');
         $netWorth = $totalAssets - $totalDebts;
 
         return [

@@ -12,6 +12,7 @@ use App\Models\BudgetPeriod;
 use App\Models\BudgetProposal;
 use App\Models\Category;
 use App\Models\User;
+use App\Services\Budget\DebtSavingsCoordinator;
 use Database\Seeders\CategorySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -50,7 +51,7 @@ class BudgetProposalTest extends TestCase
         ]);
 
         $job = new GenerateBudgetProposal($this->user);
-        $job->handle();
+        $job->handle(new DebtSavingsCoordinator);
 
         $this->assertDatabaseCount('budget_proposals', 1);
         $proposal = BudgetProposal::first();
@@ -73,7 +74,7 @@ class BudgetProposalTest extends TestCase
         ]);
 
         $job = new GenerateBudgetProposal($this->user);
-        $job->handle();
+        $job->handle(new DebtSavingsCoordinator);
 
         $this->assertDatabaseCount('budget_proposals', 1);
         $proposal = BudgetProposal::first();
@@ -95,7 +96,7 @@ class BudgetProposalTest extends TestCase
         ]);
 
         $job = new GenerateBudgetProposal($this->user);
-        $job->handle();
+        $job->handle(new DebtSavingsCoordinator);
 
         $this->assertDatabaseCount('budget_proposals', 0);
     }
@@ -112,7 +113,7 @@ class BudgetProposalTest extends TestCase
         ]);
 
         $job = new GenerateBudgetProposal($this->user);
-        $job->handle();
+        $job->handle(new DebtSavingsCoordinator);
 
         $this->assertDatabaseCount('budget_proposals', 0);
     }

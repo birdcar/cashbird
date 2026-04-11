@@ -37,17 +37,19 @@ class DebtDashboard extends Component
         return app(PayoffProjector::class)->atCurrentRate($this->debts);
     }
 
-    public function render(): View
+    public function render(AvalancheCalculator $avalanche, SavingsStageAdvisor $advisor): View
     {
         $user = auth()->user();
+        abort_if($user === null, 401);
+
         $debts = $this->debts;
-        $ordered = app(AvalancheCalculator::class)->calculatePayoffOrder($debts);
+        $ordered = $avalanche->calculatePayoffOrder($debts);
 
         $savingsStage = null;
-        if ($debts->isEmpty() && $user) {
+        if ($debts->isEmpty()) {
             $hasPaidOffDebts = $user->debts()->where('status', DebtStatus::PaidOff)->exists();
             if ($hasPaidOffDebts) {
-                $savingsStage = app(SavingsStageAdvisor::class)->currentStage($user->id);
+                $savingsStage = $advisor->currentStage($user->id);
             }
         }
 

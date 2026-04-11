@@ -26,7 +26,7 @@ class GenerateBudgetProposal implements ShouldQueue
         public User $user,
     ) {}
 
-    public function handle(): void
+    public function handle(DebtSavingsCoordinator $coordinator): void
     {
         $period = $this->user->currentBudgetPeriod();
 
@@ -83,6 +83,6 @@ class GenerateBudgetProposal implements ShouldQueue
             ]);
         }
 
-        app(DebtSavingsCoordinator::class)->checkAndPropose($this->user->id);
+        $coordinator->checkAndPropose($this->user);
     }
 }

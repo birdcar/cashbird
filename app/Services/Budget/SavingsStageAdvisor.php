@@ -15,7 +15,13 @@ class SavingsStageAdvisor
 {
     public function currentStage(int $userId): SavingsStage
     {
-        return User::findOrFail($userId)->currentSavingsStage();
+        $user = User::find($userId);
+
+        if (! $user) {
+            return SavingsStage::StarterEmergencyFund;
+        }
+
+        return $user->currentSavingsStage();
     }
 
     public function recommendedSavingsPercent(int $userId): int

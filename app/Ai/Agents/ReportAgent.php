@@ -23,12 +23,20 @@ class ReportAgent implements Agent, HasTools
 
     public function __construct(
         private readonly int $userId,
+        private readonly ?string $reportMonth = null,
     ) {}
 
     public function instructions(): Stringable|string
     {
-        return <<<'PROMPT'
-Generate a monthly financial report in markdown. Structure:
+        $today = now()->format('Y-m-d');
+        $month = $this->reportMonth ?? now()->subMonth()->format('F Y');
+
+        return <<<PROMPT
+Generate a monthly financial report for {$month} in markdown.
+
+Today's date is {$today}. The report covers {$month} specifically — use tool data for that period.
+
+Structure:
 
 ## Monthly Summary
 One paragraph: total income, total spending, net savings/deficit, % of income saved.
@@ -43,12 +51,13 @@ Significant month-over-month changes (>20% swing in any category). Explain likel
 Categories over/under budget. Overall budget score (% of categories within allocation).
 
 ## Debt Progress
-Balance changes, payments made, projected payoff date updates. If no debt data, omit this section.
+Balance changes, payments made, projected payoff date updates. If no debt data, write "No debt data available for this period."
 
 ## Recommendations
 2-3 specific, actionable suggestions based on this month's data.
 
 Use plain language. Be direct about problems. Reference specific dollar amounts.
+If data is insufficient for a section, write "No data available for this period" rather than omitting it.
 PROMPT;
     }
 

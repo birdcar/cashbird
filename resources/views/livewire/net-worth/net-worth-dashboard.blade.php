@@ -13,7 +13,7 @@
         </div>
     @else
         {{-- Stats floating free --}}
-        <div class="grid gap-x-8 gap-y-2 sm:grid-cols-3">
+        <div class="grid gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
             <div>
                 <p class="text-xs font-medium uppercase tracking-wide text-sand-400">Total assets</p>
                 <p class="mt-1 font-display text-2xl font-semibold text-sand-900">${{ number_format($totalAssets / 100, 2) }}</p>
@@ -54,7 +54,7 @@
                     <div class="flex items-end gap-2" style="height: 120px;" aria-hidden="true">
                         @foreach($trend as $snapshot)
                             @php $height = $range > 0 ? max(4, (int) round((($snapshot->net_worth - min(0, $minVal)) / $range) * 100)) : 4 @endphp
-                            <div class="flex flex-1 flex-col items-center gap-1">
+                            <div wire:key="snapshot-{{ $snapshot->id }}" class="flex flex-1 flex-col items-center gap-1">
                                 <div class="w-full rounded-t {{ $snapshot->net_worth >= 0 ? 'bg-sage-400' : 'bg-terracotta-400' }}"
                                      style="height: {{ $height }}px">
                                 </div>

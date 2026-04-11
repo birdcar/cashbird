@@ -15,23 +15,22 @@ use App\Models\User;
 
 class DebtSavingsCoordinator
 {
-    public function checkAndPropose(int $userId): ?BudgetProposal
+    public function checkAndPropose(User $user): ?BudgetProposal
     {
-        $activeDebts = Debt::where('user_id', $userId)->active()->count();
+        $activeDebts = Debt::where('user_id', $user->id)->active()->count();
         if ($activeDebts > 0) {
             return null;
         }
 
-        $paidOffDebts = Debt::where('user_id', $userId)
+        $freedTotal = (int) Debt::where('user_id', $user->id)
             ->where('status', DebtStatus::PaidOff)
-            ->get();
+            ->sum('minimum_payment');
 
-        $freedTotal = $paidOffDebts->sum('minimum_payment');
         if ($freedTotal <= 0) {
             return null;
         }
 
-        $existingProposal = BudgetProposal::whereHas('period.budget', fn ($q) => $q->where('user_id', $userId))
+        $existingProposal = BudgetProposal::whereHas('period.budget', fn ($q) => $q->where('user_id', $user->id))
             ->where('proposed_by', 'debt_coordinator')
             ->where('status', 'pending')
             ->exists();
@@ -40,7 +39,7 @@ class DebtSavingsCoordinator
             return null;
         }
 
-        $goal = SavingsGoal::where('user_id', $userId)
+        $goal = SavingsGoal::where('user_id', $user->id)
             ->where('status', GoalStatus::Active)
             ->orderBy('priority')
             ->first();
@@ -49,7 +48,7 @@ class DebtSavingsCoordinator
             return null;
         }
 
-        $period = User::find($userId)?->currentBudgetPeriod();
+        $period = $user->currentBudgetPeriod();
         if (! $period) {
             return null;
         }
