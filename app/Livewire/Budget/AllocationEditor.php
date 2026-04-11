@@ -22,6 +22,7 @@ class AllocationEditor extends Component
 
     public bool $isLocked = false;
 
+    #[Locked]
     public bool $isReadOnly = false;
 
     public function mount(string $allocationId): void
@@ -95,7 +96,13 @@ class AllocationEditor extends Component
             return $allocation;
         }
 
-        if ($user->workos_id && app(FGAService::class)->check('budget_category', $allocation->category_id, 'editor', 'user', $user->workos_id)) {
+        if (! $user->workos_id) {
+            return null;
+        }
+
+        $fga = app(FGAService::class);
+        $membershipId = $fga->getOrganizationMembershipId($user->workos_id);
+        if ($membershipId && $fga->check($membershipId, 'budget_category:edit', $allocation->category_id)) {
             return $allocation;
         }
 
@@ -128,6 +135,9 @@ class AllocationEditor extends Component
             return false;
         }
 
-        return app(FGAService::class)->check('budget_category', $allocation->category_id, 'editor', 'user', $user->workos_id);
+        $fga = app(FGAService::class);
+        $membershipId = $fga->getOrganizationMembershipId($user->workos_id);
+
+        return $membershipId && $fga->check($membershipId, 'budget_category:edit', $allocation->category_id);
     }
 }

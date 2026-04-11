@@ -16,7 +16,7 @@ class CheckBudgetAccess
         private readonly FGAService $fga,
     ) {}
 
-    public function handle(Request $request, Closure $next, string $relation = 'viewer'): Response
+    public function handle(Request $request, Closure $next, string $permission = 'budget_category:view'): Response
     {
         $categoryId = (string) $request->route('category', '');
 
@@ -42,7 +42,12 @@ class CheckBudgetAccess
             abort(403);
         }
 
-        if (! $this->fga->check('budget_category', $categoryId, $relation, 'user', $workosId)) {
+        $membershipId = $this->fga->getOrganizationMembershipId($workosId);
+        if (! $membershipId) {
+            abort(403);
+        }
+
+        if (! $this->fga->check($membershipId, $permission, $categoryId)) {
             abort(403);
         }
 

@@ -14,84 +14,115 @@ class FGAService
 
     private string $apiKey;
 
+    private string $organizationId;
+
     private int $cacheTtl = 60;
+
+    private int $membershipCacheTtl = 86400;
 
     public function __construct()
     {
         $this->baseUrl = (string) config('workos.fga.base_url', 'https://api.workos.com');
         $this->apiKey = (string) config('workos.api_key', '');
+        $this->organizationId = (string) config('workos.fga.organization_id', '');
 
         if ($this->apiKey === '' && ! app()->runningUnitTests()) {
             throw new \RuntimeException('WorkOS API key is not configured. Set WORKOS_API_KEY in .env.');
         }
     }
 
-    public function createWarrant(string $resourceType, string $resourceId, string $relation, string $subjectType, string $subjectId): void
+    public function getOrganizationMembershipId(string $workosUserId): ?string
     {
-        Http::withToken($this->apiKey)->post("{$this->baseUrl}/fga/v1/warrants", [
-            'resource_type' => $resourceType,
-            'resource_id' => $resourceId,
-            'relation' => $relation,
-            'subject' => [
-                'resource_type' => $subjectType,
-                'resource_id' => $subjectId,
-            ],
-        ])->throw();
+        $cacheKey = "fga:membership:{$workosUserId}";
 
-        $this->bumpGeneration($resourceType, $resourceId);
+        return Cache::remember($cacheKey, $this->membershipCacheTtl, function () use ($workosUserId) {
+            $response = Http::withToken($this->apiKey)
+                ->get("{$this->baseUrl}/user_management/organization_memberships", [
+                    'user_id' => $workosUserId,
+                    'organization_id' => $this->organizationId,
+                ]);
+
+            if ($response->failed()) {
+                return null;
+            }
+
+            $memberships = $response->json('data', []);
+
+            return ! empty($memberships) ? $memberships[0]['id'] : null;
+        });
     }
 
-    public function deleteWarrant(string $resourceType, string $resourceId, string $relation, string $subjectType, string $subjectId): void
+    public function createResource(string $resourceTypeSlug, string $externalId, string $name): ?string
     {
-        Http::withToken($this->apiKey)->delete("{$this->baseUrl}/fga/v1/warrants", [
-            'resource_type' => $resourceType,
-            'resource_id' => $resourceId,
-            'relation' => $relation,
-            'subject' => [
-                'resource_type' => $subjectType,
-                'resource_id' => $subjectId,
-            ],
-        ])->throw();
-
-        $this->bumpGeneration($resourceType, $resourceId);
-    }
-
-    public function check(string $resourceType, string $resourceId, string $relation, string $subjectType, string $subjectId): bool
-    {
-        $gen = $this->getGeneration($resourceType, $resourceId);
-        $cacheKey = "fga:check:v{$gen}:{$resourceType}:{$resourceId}:{$relation}:{$subjectType}:{$subjectId}";
-
-        return Cache::remember($cacheKey, $this->cacheTtl, function () use ($resourceType, $resourceId, $relation, $subjectType, $subjectId) {
-            $response = Http::withToken($this->apiKey)->post("{$this->baseUrl}/fga/v1/check", [
-                'checks' => [
-                    [
-                        'resource_type' => $resourceType,
-                        'resource_id' => $resourceId,
-                        'relation' => $relation,
-                        'subject' => [
-                            'resource_type' => $subjectType,
-                            'resource_id' => $subjectId,
-                        ],
-                    ],
-                ],
+        $response = Http::withToken($this->apiKey)
+            ->post("{$this->baseUrl}/authorization/resources", [
+                'resource_type_slug' => $resourceTypeSlug,
+                'external_id' => $externalId,
+                'name' => $name,
+                'organization_id' => $this->organizationId,
             ]);
+
+        if ($response->failed()) {
+            return null;
+        }
+
+        return $response->json('id');
+    }
+
+    public function deleteResource(string $resourceId): void
+    {
+        Http::withToken($this->apiKey)
+            ->delete("{$this->baseUrl}/authorization/resources/{$resourceId}")
+            ->throw();
+    }
+
+    public function assignRole(string $orgMembershipId, string $roleSlug, string $resourceId): void
+    {
+        Http::withToken($this->apiKey)
+            ->post("{$this->baseUrl}/authorization/organization_memberships/{$orgMembershipId}/role_assignments", [
+                'role_slug' => $roleSlug,
+                'resource_id' => $resourceId,
+            ])->throw();
+
+        $this->bumpGeneration($resourceId);
+    }
+
+    public function removeRole(string $orgMembershipId, string $roleSlug, string $resourceId): void
+    {
+        Http::withToken($this->apiKey)
+            ->delete("{$this->baseUrl}/authorization/organization_memberships/{$orgMembershipId}/role_assignments", [
+                'role_slug' => $roleSlug,
+                'resource_id' => $resourceId,
+            ])->throw();
+
+        $this->bumpGeneration($resourceId);
+    }
+
+    public function check(string $orgMembershipId, string $permissionSlug, string $resourceId): bool
+    {
+        $gen = $this->getGeneration($resourceId);
+        $cacheKey = "fga:check:v{$gen}:{$orgMembershipId}:{$permissionSlug}:{$resourceId}";
+
+        return Cache::remember($cacheKey, $this->cacheTtl, function () use ($orgMembershipId, $permissionSlug, $resourceId) {
+            $response = Http::withToken($this->apiKey)
+                ->post("{$this->baseUrl}/authorization/organization_memberships/{$orgMembershipId}/check", [
+                    'permission_slug' => $permissionSlug,
+                    'resource_id' => $resourceId,
+                ]);
 
             if ($response->failed()) {
                 return false;
             }
 
-            $results = $response->json('results', []);
-
-            return ! empty($results) && ($results[0]['authorized'] ?? false);
+            return $response->json('authorized', false);
         });
     }
 
-    /** @return Collection<int, array{resource_type: string, resource_id: string, relation: string, subject: array{resource_type: string, resource_id: string}}> */
-    public function listWarrants(string $resourceType, string $resourceId): Collection
+    /** @return Collection<int, array<string, mixed>> */
+    public function listRoleAssignments(string $resourceId): Collection
     {
         $response = Http::withToken($this->apiKey)
-            ->get("{$this->baseUrl}/fga/v1/warrants", [
-                'resource_type' => $resourceType,
+            ->get("{$this->baseUrl}/authorization/role_assignments", [
                 'resource_id' => $resourceId,
             ]);
 
@@ -102,34 +133,19 @@ class FGAService
         return collect($response->json('data', []));
     }
 
-    /** @param array<int, array{resource_type: string, resource_id: string, relation: string, subject_type: string, subject_id: string}> $checks */
-    public function batchCheck(array $checks): array
+    private function bumpGeneration(string $resourceId): void
     {
-        $results = [];
+        $genKey = "fga:gen:{$resourceId}";
 
-        foreach ($checks as $check) {
-            $key = "{$check['resource_type']}:{$check['resource_id']}:{$check['relation']}:{$check['subject_type']}:{$check['subject_id']}";
-            $results[$key] = $this->check(
-                $check['resource_type'],
-                $check['resource_id'],
-                $check['relation'],
-                $check['subject_type'],
-                $check['subject_id'],
-            );
+        if (! Cache::has($genKey)) {
+            Cache::put($genKey, 1, now()->addDays(7));
+        } else {
+            Cache::increment($genKey);
         }
-
-        return $results;
     }
 
-    private function bumpGeneration(string $resourceType, string $resourceId): void
+    private function getGeneration(string $resourceId): int
     {
-        $genKey = "fga:gen:{$resourceType}:{$resourceId}";
-        $newGen = ((int) Cache::get($genKey, 0)) + 1;
-        Cache::put($genKey, $newGen, now()->addDays(7));
-    }
-
-    private function getGeneration(string $resourceType, string $resourceId): int
-    {
-        return (int) Cache::get("fga:gen:{$resourceType}:{$resourceId}", 0);
+        return (int) Cache::get("fga:gen:{$resourceId}", 0);
     }
 }

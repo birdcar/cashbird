@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Sharing;
 
 use App\Enums\SharingStatus;
+use App\Models\BudgetAllocation;
 use App\Models\SharingInvitation;
 use App\Models\User;
 use App\Services\WorkOS\FGAService;
@@ -51,6 +52,16 @@ class ShareBudgetCategory extends Component
             return;
         }
 
+        $ownsCategory = BudgetAllocation::whereHas('period.budget', fn ($q) => $q->where('user_id', $user->id))
+            ->where('category_id', $this->categoryId)
+            ->exists();
+
+        if (! $ownsCategory) {
+            $this->addError('email', 'You can only share categories from your own budget.');
+
+            return;
+        }
+
         $existing = SharingInvitation::where('from_user_id', $user->id)
             ->where('to_user_id', $recipient->id)
             ->where('resource_type', 'budget_category')
@@ -63,7 +74,20 @@ class ShareBudgetCategory extends Component
             return;
         }
 
-        DB::transaction(function () use ($user, $recipient, $existing) {
+        $recipientMembershipId = $fga->getOrganizationMembershipId($recipient->workos_id);
+        if (! $recipientMembershipId) {
+            $this->addError('email', 'This user is not a member of the family organization.');
+
+            return;
+        }
+
+        $categoryName = BudgetAllocation::whereHas('period.budget', fn ($q) => $q->where('user_id', $user->id))
+            ->where('category_id', $this->categoryId)
+            ->with('category')
+            ->first()
+            ?->category?->name ?? 'Budget Category';
+
+        DB::transaction(function () use ($user, $recipient, $existing, $fga, $recipientMembershipId, $categoryName) {
             if ($existing) {
                 $existing->update([
                     'relation' => $this->relation,
@@ -79,15 +103,12 @@ class ShareBudgetCategory extends Component
                     'status' => SharingStatus::Active,
                 ]);
             }
-        });
 
-        $fga->createWarrant(
-            'budget_category',
-            $this->categoryId,
-            $this->relation,
-            'user',
-            $recipient->workos_id,
-        );
+            $resourceId = $fga->createResource('budget_category', $this->categoryId, $categoryName);
+            if ($resourceId) {
+                $fga->assignRole($recipientMembershipId, $this->relation, $resourceId);
+            }
+        });
 
         $this->reset('email');
         $this->dispatch('category-shared');

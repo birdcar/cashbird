@@ -44,13 +44,14 @@ class ManageSharing extends Component
 
             $recipient = $invitation->toUser;
             if ($recipient?->workos_id) {
-                $fga->deleteWarrant(
-                    $invitation->resource_type,
-                    $invitation->resource_id,
-                    $invitation->relation->value,
-                    'user',
-                    $recipient->workos_id,
-                );
+                $membershipId = $fga->getOrganizationMembershipId($recipient->workos_id);
+                if ($membershipId) {
+                    $fga->removeRole(
+                        $membershipId,
+                        $invitation->relation->value,
+                        $invitation->resource_id,
+                    );
+                }
             }
         });
 

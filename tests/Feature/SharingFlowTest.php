@@ -33,15 +33,22 @@ class SharingFlowTest extends TestCase
         $this->fga = app(FGAService::class);
     }
 
-    public function test_sharing_creates_warrant_and_invitation(): void
+    public function test_sharing_creates_resource_and_role_assignment(): void
     {
         Http::fake([
-            '*/fga/v1/warrants' => Http::response([], 200),
+            '*/authorization/resources' => Http::response([
+                'id' => 'authz_resource_01ABC',
+                'resource_type_slug' => 'budget_category',
+            ], 200),
+            '*/authorization/organization_memberships/*/role_assignments' => Http::response([
+                'id' => 'role_assignment_01ABC',
+            ], 200),
         ]);
 
         $categoryId = Str::uuid()->toString();
 
-        $this->fga->createWarrant('budget_category', $categoryId, 'viewer', 'user', $this->partner->workos_id);
+        $resourceId = $this->fga->createResource('budget_category', $categoryId, 'Groceries');
+        $this->fga->assignRole('om_partner', 'viewer', $resourceId);
 
         $invitation = SharingInvitation::create([
             'from_user_id' => $this->owner->id,
@@ -52,15 +59,19 @@ class SharingFlowTest extends TestCase
             'status' => SharingStatus::Active,
         ]);
 
-        Http::assertSent(fn ($r) => str_contains($r->url(), '/fga/v1/warrants'));
+        Http::assertSent(fn ($r) => str_contains($r->url(), '/authorization/resources') && $r->method() === 'POST');
+        Http::assertSent(fn ($r) => str_contains($r->url(), '/role_assignments') && $r->method() === 'POST');
         $this->assertDatabaseCount('sharing_invitations', 1);
         $this->assertEquals(SharingStatus::Active, $invitation->status);
     }
 
-    public function test_revoking_deletes_warrant_and_updates_invitation(): void
+    public function test_revoking_removes_role_assignment(): void
     {
         Http::fake([
-            '*/fga/v1/warrants' => Http::response([], 200),
+            '*/user_management/organization_memberships*' => Http::response([
+                'data' => [['id' => 'om_partner']],
+            ], 200),
+            '*/authorization/organization_memberships/*/role_assignments' => Http::response([], 200),
         ]);
 
         $categoryId = Str::uuid()->toString();
@@ -74,10 +85,11 @@ class SharingFlowTest extends TestCase
             'status' => SharingStatus::Active,
         ]);
 
-        $this->fga->deleteWarrant('budget_category', $categoryId, 'viewer', 'user', $this->partner->workos_id);
+        $membershipId = $this->fga->getOrganizationMembershipId($this->partner->workos_id);
+        $this->fga->removeRole($membershipId, 'viewer', $categoryId);
         $invitation->revoke();
 
-        Http::assertSent(fn ($r) => $r->method() === 'DELETE');
+        Http::assertSent(fn ($r) => $r->method() === 'DELETE' && str_contains($r->url(), '/role_assignments'));
         $this->assertEquals(SharingStatus::Revoked, $invitation->fresh()->status);
     }
 
@@ -99,7 +111,7 @@ class SharingFlowTest extends TestCase
         $this->assertEquals($this->owner->id, $invitation->to_user_id);
     }
 
-    public function test_duplicate_share_is_idempotent(): void
+    public function test_duplicate_share_throws_constraint(): void
     {
         $categoryId = Str::uuid()->toString();
 
@@ -153,12 +165,12 @@ class SharingFlowTest extends TestCase
     public function test_partner_can_check_access_via_fga(): void
     {
         Http::fake([
-            '*/fga/v1/check' => Http::response([
-                'results' => [['authorized' => true]],
+            '*/authorization/organization_memberships/*/check' => Http::response([
+                'authorized' => true,
             ], 200),
         ]);
 
-        $result = $this->fga->check('budget_category', 'cat-123', 'viewer', 'user', $this->partner->workos_id);
+        $result = $this->fga->check('om_partner', 'budget_category:view', 'authz_resource_01XYZ');
 
         $this->assertTrue($result);
     }

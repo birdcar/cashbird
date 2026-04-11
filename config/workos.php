@@ -152,5 +152,6 @@ return [
 
     'fga' => [
         'base_url' => env('WORKOS_FGA_BASE_URL', 'https://api.workos.com'),
+        'organization_id' => env('WORKOS_ORGANIZATION_ID'),
     ],
 ];

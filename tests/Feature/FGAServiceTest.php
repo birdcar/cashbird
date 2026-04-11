@@ -6,7 +6,6 @@ namespace Tests\Feature;
 
 use App\Services\WorkOS\FGAService;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -22,47 +21,98 @@ class FGAServiceTest extends TestCase
         $this->fga = app(FGAService::class);
     }
 
-    public function test_create_warrant_sends_correct_request(): void
+    public function test_get_organization_membership_id_resolves_and_caches(): void
     {
         Http::fake([
-            '*/fga/v1/warrants' => Http::response([], 200),
+            '*/user_management/organization_memberships*' => Http::response([
+                'data' => [['id' => 'om_01ABC']],
+            ], 200),
         ]);
 
-        $this->fga->createWarrant('budget_category', 'cat-123', 'viewer', 'user', 'user_01ABC');
+        $id = $this->fga->getOrganizationMembershipId('user_01XYZ');
+        $this->assertEquals('om_01ABC', $id);
+
+        // Second call should use cache — no additional HTTP
+        $id2 = $this->fga->getOrganizationMembershipId('user_01XYZ');
+        $this->assertEquals('om_01ABC', $id2);
+
+        Http::assertSentCount(1);
+    }
+
+    public function test_get_organization_membership_id_returns_null_on_failure(): void
+    {
+        Http::fake([
+            '*/user_management/organization_memberships*' => Http::response([], 500),
+        ]);
+
+        $id = $this->fga->getOrganizationMembershipId('user_01XYZ');
+        $this->assertNull($id);
+    }
+
+    public function test_create_resource_sends_correct_request(): void
+    {
+        Http::fake([
+            '*/authorization/resources' => Http::response([
+                'id' => 'authz_resource_01ABC',
+                'resource_type_slug' => 'budget_category',
+                'external_id' => 'cat-123',
+            ], 200),
+        ]);
+
+        $resourceId = $this->fga->createResource('budget_category', 'cat-123', 'Groceries');
+
+        $this->assertEquals('authz_resource_01ABC', $resourceId);
 
         Http::assertSent(function ($request) {
-            return $request->url() === 'https://api.workos.com/fga/v1/warrants'
-                && $request['resource_type'] === 'budget_category'
-                && $request['resource_id'] === 'cat-123'
-                && $request['relation'] === 'viewer'
-                && $request['subject']['resource_type'] === 'user'
-                && $request['subject']['resource_id'] === 'user_01ABC';
+            return str_contains($request->url(), '/authorization/resources')
+                && $request->method() === 'POST'
+                && $request['resource_type_slug'] === 'budget_category'
+                && $request['external_id'] === 'cat-123'
+                && $request['name'] === 'Groceries';
         });
     }
 
-    public function test_delete_warrant_sends_correct_request(): void
+    public function test_assign_role_sends_correct_request(): void
     {
         Http::fake([
-            '*/fga/v1/warrants' => Http::response([], 200),
+            '*/authorization/organization_memberships/*/role_assignments' => Http::response([
+                'id' => 'role_assignment_01ABC',
+            ], 200),
         ]);
 
-        $this->fga->deleteWarrant('budget_category', 'cat-123', 'viewer', 'user', 'user_01ABC');
+        $this->fga->assignRole('om_01ABC', 'viewer', 'authz_resource_01XYZ');
+
+        Http::assertSent(function ($request) {
+            return str_contains($request->url(), '/organization_memberships/om_01ABC/role_assignments')
+                && $request->method() === 'POST'
+                && $request['role_slug'] === 'viewer'
+                && $request['resource_id'] === 'authz_resource_01XYZ';
+        });
+    }
+
+    public function test_remove_role_sends_delete_request(): void
+    {
+        Http::fake([
+            '*/authorization/organization_memberships/*/role_assignments' => Http::response([], 200),
+        ]);
+
+        $this->fga->removeRole('om_01ABC', 'viewer', 'authz_resource_01XYZ');
 
         Http::assertSent(function ($request) {
             return $request->method() === 'DELETE'
-                && str_contains($request->url(), '/fga/v1/warrants');
+                && str_contains($request->url(), '/organization_memberships/om_01ABC/role_assignments');
         });
     }
 
     public function test_check_returns_true_when_authorized(): void
     {
         Http::fake([
-            '*/fga/v1/check' => Http::response([
-                'results' => [['authorized' => true]],
+            '*/authorization/organization_memberships/*/check' => Http::response([
+                'authorized' => true,
             ], 200),
         ]);
 
-        $result = $this->fga->check('budget_category', 'cat-123', 'viewer', 'user', 'user_01ABC');
+        $result = $this->fga->check('om_01ABC', 'budget_category:view', 'authz_resource_01XYZ');
 
         $this->assertTrue($result);
     }
@@ -70,12 +120,12 @@ class FGAServiceTest extends TestCase
     public function test_check_returns_false_when_unauthorized(): void
     {
         Http::fake([
-            '*/fga/v1/check' => Http::response([
-                'results' => [['authorized' => false]],
+            '*/authorization/organization_memberships/*/check' => Http::response([
+                'authorized' => false,
             ], 200),
         ]);
 
-        $result = $this->fga->check('budget_category', 'cat-123', 'viewer', 'user', 'user_01ABC');
+        $result = $this->fga->check('om_01ABC', 'budget_category:edit', 'authz_resource_01XYZ');
 
         $this->assertFalse($result);
     }
@@ -83,10 +133,10 @@ class FGAServiceTest extends TestCase
     public function test_check_returns_false_on_api_failure(): void
     {
         Http::fake([
-            '*/fga/v1/check' => Http::response([], 500),
+            '*/authorization/organization_memberships/*/check' => Http::response([], 500),
         ]);
 
-        $result = $this->fga->check('budget_category', 'cat-123', 'viewer', 'user', 'user_01ABC');
+        $result = $this->fga->check('om_01ABC', 'budget_category:view', 'authz_resource_01XYZ');
 
         $this->assertFalse($result);
     }
@@ -94,68 +144,49 @@ class FGAServiceTest extends TestCase
     public function test_check_caches_result(): void
     {
         Http::fake([
-            '*/fga/v1/check' => Http::response([
-                'results' => [['authorized' => true]],
+            '*/authorization/organization_memberships/*/check' => Http::response([
+                'authorized' => true,
             ], 200),
         ]);
 
-        $this->fga->check('budget_category', 'cat-123', 'viewer', 'user', 'user_01ABC');
-        $this->fga->check('budget_category', 'cat-123', 'viewer', 'user', 'user_01ABC');
+        $this->fga->check('om_01ABC', 'budget_category:view', 'authz_resource_01XYZ');
+        $this->fga->check('om_01ABC', 'budget_category:view', 'authz_resource_01XYZ');
 
         Http::assertSentCount(1);
     }
 
-    public function test_create_warrant_invalidates_cache(): void
+    public function test_assign_role_invalidates_cache(): void
     {
         Http::fake([
-            '*/fga/v1/check' => Http::response([
-                'results' => [['authorized' => true]],
+            '*/authorization/organization_memberships/*/check' => Http::response([
+                'authorized' => true,
             ], 200),
-            '*/fga/v1/warrants' => Http::response([], 200),
+            '*/authorization/organization_memberships/*/role_assignments' => Http::response([
+                'id' => 'role_assignment_01ABC',
+            ], 200),
         ]);
 
-        // First check: hits HTTP (cached under gen 0)
-        $this->fga->check('budget_category', 'cat-123', 'viewer', 'user', 'user_01ABC');
-        // Create warrant: bumps generation counter
-        $this->fga->createWarrant('budget_category', 'cat-123', 'editor', 'user', 'user_01ABC');
-        // Second check: gen changed, old cache key misses, hits HTTP again
-        $this->fga->check('budget_category', 'cat-123', 'viewer', 'user', 'user_01ABC');
+        $this->fga->check('om_01ABC', 'budget_category:view', 'authz_resource_01XYZ');
+        $this->fga->assignRole('om_01ABC', 'editor', 'authz_resource_01XYZ');
+        $this->fga->check('om_01ABC', 'budget_category:view', 'authz_resource_01XYZ');
 
-        // 1 check + 1 warrant + 1 check = 3 HTTP requests
+        // 1 check + 1 assign + 1 check = 3 HTTP requests
         Http::assertSentCount(3);
     }
 
-    public function test_list_warrants_returns_collection(): void
+    public function test_list_role_assignments_returns_collection(): void
     {
         Http::fake([
-            '*/fga/v1/warrants*' => Http::response([
+            '*/authorization/role_assignments*' => Http::response([
                 'data' => [
-                    ['resource_type' => 'budget_category', 'resource_id' => 'cat-123', 'relation' => 'viewer'],
+                    ['id' => 'ra_01', 'role' => ['slug' => 'viewer']],
                 ],
             ], 200),
         ]);
 
-        $warrants = $this->fga->listWarrants('budget_category', 'cat-123');
+        $assignments = $this->fga->listRoleAssignments('authz_resource_01XYZ');
 
-        $this->assertCount(1, $warrants);
-        $this->assertEquals('viewer', $warrants[0]['relation']);
-    }
-
-    public function test_batch_check_returns_keyed_results(): void
-    {
-        Http::fake([
-            '*/fga/v1/check' => Http::sequence()
-                ->push(['results' => [['authorized' => true]]], 200)
-                ->push(['results' => [['authorized' => false]]], 200),
-        ]);
-
-        $results = $this->fga->batchCheck([
-            ['resource_type' => 'budget_category', 'resource_id' => 'cat-1', 'relation' => 'viewer', 'subject_type' => 'user', 'subject_id' => 'u1'],
-            ['resource_type' => 'budget_category', 'resource_id' => 'cat-2', 'relation' => 'viewer', 'subject_type' => 'user', 'subject_id' => 'u1'],
-        ]);
-
-        $this->assertCount(2, $results);
-        $this->assertTrue($results['budget_category:cat-1:viewer:user:u1']);
-        $this->assertFalse($results['budget_category:cat-2:viewer:user:u1']);
+        $this->assertCount(1, $assignments);
+        $this->assertEquals('viewer', $assignments[0]['role']['slug']);
     }
 }
