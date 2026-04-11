@@ -7,7 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.4",
-        "birdcar/authkit-laravel": "^0.3.0",
+        "birdcar/authkit-laravel": "^0.4.0",
         "codeat3/blade-phosphor-icons": "^2.4",
         "laravel/ai": "^0.5.0",
         "laravel/framework": "^13.0",
@@ -47,7 +47,7 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74,#86efac\" \"php artisan serve\" \"php artisan queue:listen --tries=1 --timeout=0\" \"php artisan pail --timeout=0\" \"bun run dev\" \"php artisan workos:poll-events\" --names=server,queue,logs,vite,workos --kill-others"
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74,#86efac\" \"php artisan serve\" \"php artisan queue:listen --tries=1 --timeout=0\" \"php artisan pail --timeout=0\" \"bun run dev\" \"php artisan workos:events-listen\" --names=server,queue,logs,vite,workos --kill-others"
         ],
         "test": [
             "@php artisan config:clear --ansi",

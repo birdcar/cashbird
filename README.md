@@ -203,7 +203,7 @@ This starts five processes concurrently:
 | `php artisan queue:listen` | Queue worker for background jobs |
 | `php artisan pail` | Real-time log tail |
 | `bun run dev` | Vite dev server (hot reload) |
-| `php artisan workos:poll-events` | Polls WorkOS Events API every 15s for user/org/membership sync |
+| `php artisan workos:events-listen` | Polls WorkOS Events API for user/org/membership sync |
 
 ## Tests
 
@@ -258,7 +258,7 @@ Cashbird is deployed with [Coolify](https://coolify.io/), a self-hosted PaaS.
 5. **Persistent storage** — mount `/app/storage` to persist logs, cache, and sessions across deploys
 6. **Services** — Coolify should also run PostgreSQL (with pgvector) and Redis as linked services, or point to external instances
 7. **Queue worker** — add a worker process: `php artisan queue:work --sleep=3 --tries=3 --max-time=3600`
-8. **WorkOS events poller** — add a worker process: `php artisan workos:poll-events` (replaces webhooks since the app isn't publicly accessible)
+8. **WorkOS events poller** — add a worker process: `php artisan workos:events-listen` (replaces webhooks since the app isn't publicly accessible)
 9. **Scheduler** — add a cron process: `php artisan schedule:work` (or configure a cron job for `php artisan schedule:run` every minute)
 
 ### Build

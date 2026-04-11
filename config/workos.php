@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 use App\Models\Organization;
 use App\Models\User;
 
@@ -106,13 +107,46 @@ return [
     |--------------------------------------------------------------------------
     |
     | Configure the webhook endpoint for receiving events from WorkOS.
+    | Disabled because the app runs on a Tailscale tailnet with no public
+    | ingress — all sync goes through the Events API poller instead.
     |
     */
 
     'webhooks' => [
         'enabled' => false,
         'prefix' => 'webhooks/workos',
-        'sync_enabled' => env('WORKOS_WEBHOOK_SYNC_ENABLED', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Events Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure event sync routing and the Events API polling worker.
+    | All categories use events_api since the app has no public ingress
+    | for webhook delivery.
+    |
+    */
+
+    'events' => [
+        'routing' => [
+            'categories' => [
+                'user' => 'events_api',
+                'organization' => 'events_api',
+                'organization_membership' => 'events_api',
+                'dsync' => 'events_api',
+                'session' => 'events_api',
+                'authentication' => 'events_api',
+            ],
+
+            'overrides' => [],
+        ],
+
+        'poll_interval' => env('WORKOS_EVENTS_POLL_INTERVAL', 15),
+        'lookback_days' => env('WORKOS_EVENTS_LOOKBACK_DAYS', 7),
+        'limit' => env('WORKOS_EVENTS_LIMIT', 100),
+        'cache_store' => env('WORKOS_EVENTS_CACHE_STORE'),
+        'cache_key' => 'workos.events.cursor',
     ],
 
     /*
