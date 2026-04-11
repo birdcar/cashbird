@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\DebtStatus;
+use App\Enums\SavingsStage;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -100,5 +102,57 @@ class User extends Authenticatable
             ->where('status', 'active')
             ->orderByDesc('month')
             ->first();
+    }
+
+    /** @return HasMany<SavingsGoal, $this> */
+    public function savingsGoals(): HasMany
+    {
+        return $this->hasMany(SavingsGoal::class);
+    }
+
+    /** @return HasMany<NetWorthSnapshot, $this> */
+    public function netWorthSnapshots(): HasMany
+    {
+        return $this->hasMany(NetWorthSnapshot::class);
+    }
+
+    /** @return HasMany<CategoryClassification, $this> */
+    public function categoryClassifications(): HasMany
+    {
+        return $this->hasMany(CategoryClassification::class);
+    }
+
+    public function currentSavingsStage(): SavingsStage
+    {
+        $hasActiveDebts = $this->debts()->where('status', DebtStatus::Active)->exists();
+
+        $emergencyFund = $this->savingsGoals()
+            ->where('is_system', true)
+            ->where('name', 'Emergency Fund')
+            ->first();
+
+        $emergencyBalance = $emergencyFund?->current_balance ?? 0;
+
+        if ($hasActiveDebts && $emergencyBalance < 100000) {
+            return SavingsStage::StarterEmergencyFund;
+        }
+
+        if ($hasActiveDebts) {
+            return SavingsStage::DebtPayoff;
+        }
+
+        $avgMonthlySpend = (int) abs(
+            $this->transactions()
+                ->where('amount', '<', 0)
+                ->where('date', '>=', now()->subMonths(3))
+                ->avg('amount') ?? 0
+        );
+        $threeMonthExpenses = max($avgMonthlySpend * 3, 100000);
+
+        if ($emergencyBalance < $threeMonthExpenses) {
+            return SavingsStage::FullEmergencyFund;
+        }
+
+        return SavingsStage::NamedGoals;
     }
 }
