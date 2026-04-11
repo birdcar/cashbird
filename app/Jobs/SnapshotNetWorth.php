@@ -20,7 +20,7 @@ class SnapshotNetWorth implements ShouldQueue
     public int $tries = 3;
 
     /** @var list<int> */
-    public array $backoff = [30, 120];
+    public array $backoff = [30, 120, 300];
 
     public function handle(NetWorthCalculator $calculator): void
     {

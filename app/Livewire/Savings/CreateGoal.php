@@ -7,6 +7,7 @@ namespace App\Livewire\Savings;
 use App\Enums\GoalStatus;
 use App\Models\SavingsGoal;
 use App\Support\Money;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -36,18 +37,20 @@ class CreateGoal extends Component
         $user = auth()->user();
         abort_if($user === null, 401);
 
-        $maxPriority = SavingsGoal::where('user_id', $user->id)->max('priority') ?? -1;
+        DB::transaction(function () use ($user) {
+            $maxPriority = SavingsGoal::where('user_id', $user->id)->lockForUpdate()->max('priority') ?? -1;
 
-        SavingsGoal::create([
-            'user_id' => $user->id,
-            'name' => $this->name,
-            'target_amount' => Money::toCents($this->target_amount),
-            'current_balance' => 0,
-            'target_date' => $this->target_date,
-            'monthly_contribution' => $this->monthly_contribution ? Money::toCents($this->monthly_contribution) : 0,
-            'priority' => $maxPriority + 1,
-            'status' => GoalStatus::Active,
-        ]);
+            SavingsGoal::create([
+                'user_id' => $user->id,
+                'name' => $this->name,
+                'target_amount' => Money::toCents($this->target_amount),
+                'current_balance' => 0,
+                'target_date' => $this->target_date,
+                'monthly_contribution' => $this->monthly_contribution ? Money::toCents($this->monthly_contribution) : 0,
+                'priority' => $maxPriority + 1,
+                'status' => GoalStatus::Active,
+            ]);
+        });
 
         $this->redirect(route('savings.index'), navigate: true);
     }

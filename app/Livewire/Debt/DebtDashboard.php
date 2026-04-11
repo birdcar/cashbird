@@ -37,6 +37,15 @@ class DebtDashboard extends Component
         return app(PayoffProjector::class)->atCurrentRate($this->debts);
     }
 
+    #[Computed]
+    public function hasPaidOffDebts(): bool
+    {
+        $user = auth()->user();
+        abort_if($user === null, 401);
+
+        return $user->debts()->where('status', DebtStatus::PaidOff)->exists();
+    }
+
     public function render(AvalancheCalculator $avalanche, SavingsStageAdvisor $advisor): View
     {
         $user = auth()->user();
@@ -46,11 +55,8 @@ class DebtDashboard extends Component
         $ordered = $avalanche->calculatePayoffOrder($debts);
 
         $savingsStage = null;
-        if ($debts->isEmpty()) {
-            $hasPaidOffDebts = $user->debts()->where('status', DebtStatus::PaidOff)->exists();
-            if ($hasPaidOffDebts) {
-                $savingsStage = $advisor->currentStage($user->id);
-            }
+        if ($debts->isEmpty() && $this->hasPaidOffDebts) {
+            $savingsStage = $advisor->currentStage($user->id);
         }
 
         return view('livewire.debt.debt-dashboard', [

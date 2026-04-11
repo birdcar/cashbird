@@ -13,6 +13,9 @@ use Carbon\Carbon;
 
 class SavingsStageAdvisor
 {
+    /** $1,000 starter emergency fund floor (in cents) */
+    private const STARTER_FUND_FLOOR = 100000;
+
     public function currentStage(int $userId): SavingsStage
     {
         $user = User::find($userId);
@@ -71,7 +74,7 @@ class SavingsStageAdvisor
                 'name' => 'Emergency Fund',
             ],
             [
-                'target_amount' => 100000,
+                'target_amount' => self::STARTER_FUND_FLOOR,
                 'monthly_contribution' => 0,
                 'priority' => 0,
                 'status' => GoalStatus::Active,
@@ -81,7 +84,7 @@ class SavingsStageAdvisor
 
     private function ensureFullFund(int $userId): SavingsGoal
     {
-        $threeMonthExpenses = max($this->monthlyExpenses($userId) * 3, 100000);
+        $threeMonthExpenses = max($this->monthlyExpenses($userId) * 3, self::STARTER_FUND_FLOOR);
 
         $goal = SavingsGoal::where('user_id', $userId)
             ->where('is_system', true)

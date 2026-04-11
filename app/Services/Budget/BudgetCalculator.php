@@ -88,7 +88,7 @@ class BudgetCalculator
 
     public function allocateRemaining(BudgetPeriod $period): void
     {
-        $allocated = $period->allocations()->sum('allocated_amount');
+        $allocated = (int) $period->allocations()->sum('allocated_amount');
         $remaining = $period->total_income - $allocated;
 
         if ($remaining <= 0) {
@@ -107,17 +107,17 @@ class BudgetCalculator
         }
 
         $period->update([
-            'total_allocated' => $period->allocations()->sum('allocated_amount'),
+            'total_allocated' => $allocated + $remaining,
         ]);
     }
 
     public function rebalance(BudgetPeriod $period, array $lockedAllocationIds): void
     {
-        $locked = $period->allocations()
+        $locked = (int) $period->allocations()
             ->whereIn('id', $lockedAllocationIds)
             ->sum('allocated_amount');
 
-        $fixed = $period->allocations()
+        $fixed = (int) $period->allocations()
             ->where('is_fixed', true)
             ->whereNotIn('id', $lockedAllocationIds)
             ->sum('allocated_amount');
@@ -136,13 +136,15 @@ class BudgetCalculator
         $perCategory = (int) floor($remaining / $unlocked->count());
         $leftover = $remaining - ($perCategory * $unlocked->count());
 
+        $totalAllocated = $locked + $fixed;
         foreach ($unlocked as $i => $allocation) {
             $amount = $perCategory + ($i === 0 ? $leftover : 0);
             $allocation->update(['allocated_amount' => $amount]);
+            $totalAllocated += $amount;
         }
 
         $period->update([
-            'total_allocated' => $period->allocations()->sum('allocated_amount'),
+            'total_allocated' => $totalAllocated,
         ]);
     }
 

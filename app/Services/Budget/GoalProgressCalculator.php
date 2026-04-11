@@ -47,7 +47,7 @@ class GoalProgressCalculator
 
     private function isOnTrack(SavingsGoal $goal, int $progress): ?string
     {
-        if (! $goal->target_date) {
+        if (! $goal->target_date || ! $goal->created_at) {
             return null;
         }
 

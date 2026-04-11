@@ -86,8 +86,17 @@ PROMPT;
                     'severity' => $schema->string()->required()
                         ->enum(['info', 'warning', 'action_required'])
                         ->description('How urgent this insight is'),
-                    'data' => $schema->object()->required()
-                        ->description('Supporting data (amounts, merchant names, etc.)'),
+                    'data' => $schema->object([
+                        'amount_cents' => $schema->integer()
+                            ->description('Primary dollar amount in cents, if applicable'),
+                        'merchant' => $schema->string()
+                            ->description('Merchant name, if applicable'),
+                        'category' => $schema->string()
+                            ->description('Category name, if applicable'),
+                        'monthly_amount_cents' => $schema->integer()
+                            ->description('Monthly recurring amount in cents, if applicable'),
+                    ])->required()
+                        ->description('Supporting data keyed by context: amount_cents, merchant, category, monthly_amount_cents'),
                 ]))
                 ->description('List of financial insights'),
         ];
