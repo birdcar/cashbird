@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Livewire\Budget;
 
+use App\Enums\BudgetCategory;
 use App\Models\BudgetAllocation;
 use App\Models\SharingInvitation;
 use App\Services\Budget\BudgetCalculator;
+use App\Services\Budget\CategoryClassifier;
 use App\Services\Budget\ReadyToSpend;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
@@ -59,13 +61,40 @@ class BudgetOverview extends Component
             ])
             ->values();
 
+        $classifier = app(CategoryClassifier::class);
+        $classifications = $period ? $classifier->classifyForUser($user->id) : [];
+
+        $needsTotal = 0;
+        $wantsTotal = 0;
+        $savingsTotal = 0;
+        foreach ($allocations as $allocation) {
+            if ($allocation->lock_reason === 'savings_target') {
+                $savingsTotal += $allocation->allocated_amount;
+            } elseif (($classifications[$allocation->category_id] ?? BudgetCategory::Want) === BudgetCategory::Need) {
+                $needsTotal += $allocation->allocated_amount;
+            } else {
+                $wantsTotal += $allocation->allocated_amount;
+            }
+        }
+
+        $totalAllocated = $needsTotal + $wantsTotal + $savingsTotal;
+        $needsPercent = $totalAllocated > 0 ? (int) round($needsTotal / $totalAllocated * 100) : 0;
+        $wantsPercent = $totalAllocated > 0 ? (int) round($wantsTotal / $totalAllocated * 100) : 0;
+        $savingsPercent = $totalAllocated > 0 ? 100 - $needsPercent - $wantsPercent : 0;
+
         return view('livewire.budget.budget-overview', [
             'period' => $period,
-            'allocations' => $allocations,
+            'allocations' => $allocations->filter(fn ($a) => $a->lock_reason !== 'savings_target'),
             'rtsData' => $rtsData,
             'proposals' => $proposals,
             'hasBudget' => $user->budget !== null,
             'sharedAllocations' => $sharedAllocations,
+            'needsPercent' => $needsPercent,
+            'wantsPercent' => $wantsPercent,
+            'savingsPercent' => $savingsPercent,
+            'needsTotal' => $needsTotal,
+            'wantsTotal' => $wantsTotal,
+            'savingsTotal' => $savingsTotal,
         ]);
     }
 }

@@ -6,7 +6,13 @@
             <p class="font-display text-fluid-xl font-semibold text-sand-900">
                 ${{ number_format($totalDailySafe / 100, 2) }}
             </p>
-            <p class="mt-1 text-sm text-sand-500">per day for the rest of this month <x-help-tip text="Your remaining budget divided by the days left this month." /></p>
+            <p class="mt-1 text-sm text-sand-500">
+                per day for the rest of this month
+                @if($savingsPerDay > 0)
+                    <span class="text-sage-600">(saving ${{ number_format($savingsPerDay / 100, 2) }}/day)</span>
+                @endif
+                <x-help-tip text="Your remaining budget divided by the days left this month, after setting aside your savings contribution." />
+            </p>
         </div>
 
         <div class="grid gap-6 sm:grid-cols-2 border-t border-amber-200 pt-6">

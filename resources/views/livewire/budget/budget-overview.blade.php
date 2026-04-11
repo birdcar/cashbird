@@ -25,15 +25,40 @@
         @endif
 
         {{-- Stats floating free --}}
-        <div class="grid gap-x-8 gap-y-2 sm:grid-cols-3">
+        <div class="grid gap-x-8 gap-y-2 sm:grid-cols-4">
             <div>
                 <p class="text-xs font-medium uppercase tracking-wide text-sand-400">Monthly income</p>
                 <p class="mt-1 font-display text-2xl font-semibold text-sand-900">${{ number_format($period->total_income / 100, 2) }}</p>
             </div>
             <div>
-                <p class="text-xs font-medium uppercase tracking-wide text-sand-400">Budgeted</p>
-                <p class="mt-1 font-display text-2xl font-semibold text-sand-900">${{ number_format($period->total_allocated / 100, 2) }}</p>
+                <p class="text-xs font-medium uppercase tracking-wide text-amber-500">Needs</p>
+                <p class="mt-1 font-display text-2xl font-semibold text-sand-900">${{ number_format($needsTotal / 100, 2) }}</p>
             </div>
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-sage-500">Wants</p>
+                <p class="mt-1 font-display text-2xl font-semibold text-sand-900">${{ number_format($wantsTotal / 100, 2) }}</p>
+            </div>
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-terracotta-500">Savings</p>
+                <p class="mt-1 font-display text-2xl font-semibold text-sand-900">${{ number_format($savingsTotal / 100, 2) }}</p>
+            </div>
+        </div>
+
+        {{-- 50/30/20 visual bar --}}
+        <div>
+            <div class="flex h-3 overflow-hidden rounded-full">
+                <div class="bg-amber-400" style="width: {{ $needsPercent }}%"></div>
+                <div class="bg-sage-400" style="width: {{ $wantsPercent }}%"></div>
+                <div class="bg-terracotta-400" style="width: {{ $savingsPercent }}%"></div>
+            </div>
+            <div class="mt-1.5 flex items-center justify-between text-xs text-sand-400">
+                <span>Needs {{ $needsPercent }}% <span class="text-sand-300">(target 50%)</span></span>
+                <span>Wants {{ $wantsPercent }}% <span class="text-sand-300">(30%)</span></span>
+                <span>Savings {{ $savingsPercent }}% <span class="text-sand-300">(20%)</span></span>
+            </div>
+        </div>
+
+        <div class="grid gap-x-8 gap-y-2 sm:grid-cols-1">
             <div>
                 <p class="text-xs font-medium uppercase tracking-wide text-sand-400">Unbudgeted <x-help-tip text="Income that hasn't been assigned to a category yet. Ideally this is close to zero." /></p>
                 <p class="mt-1 font-display text-2xl font-semibold {{ ($period->total_income - $period->total_allocated) >= 0 ? 'text-sage-600' : 'text-terracotta-600' }}">

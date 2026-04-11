@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Budget;
 
+use App\Enums\BudgetCategory;
 use App\Models\Budget;
 use App\Models\BudgetAllocation;
 use App\Models\BudgetPeriod;
@@ -19,6 +20,8 @@ class BudgetCalculator
     public function __construct(
         private readonly SpendingAggregator $aggregator,
         private readonly RecurringChargeDetector $detector,
+        private readonly SavingsStageAdvisor $advisor,
+        private readonly CategoryClassifier $classifier,
     ) {}
 
     public function generateInitialBudget(int $userId): BudgetPeriod
@@ -43,9 +46,15 @@ class BudgetCalculator
             ]);
 
             $this->detector->detect($userId);
+            $this->advisor->ensureSystemGoal($userId);
 
+            $savingsPercent = $this->advisor->recommendedSavingsPercent($userId);
+            $split = $this->calculateSplit($income, $savingsPercent);
+
+            $this->allocateSavings($period, $split['savingsAmount']);
             $this->allocateFromRecurring($period, $userId);
-            $this->allocateDiscretionary($period, $userId);
+            $this->allocateDiscretionary($period, $userId, $split);
+            $this->allocateRemaining($period);
 
             $period->update([
                 'total_allocated' => $period->allocations()->sum('allocated_amount'),
@@ -53,6 +62,27 @@ class BudgetCalculator
 
             return $period;
         });
+    }
+
+    /**
+     * Calculate the 50/30/20 budget split.
+     *
+     * Default: 50% needs, 30% savings, 20% wants.
+     * The needs/wants ratio can be adjusted via $needsPercent (percentage of total income).
+     *
+     * @return array{savingsAmount: int, needsTarget: int, wantsTarget: int}
+     */
+    public function calculateSplit(int $totalIncome, int $savingsPercent, int $needsPercent = 50): array
+    {
+        if ($totalIncome <= 0) {
+            return ['savingsAmount' => 0, 'needsTarget' => 0, 'wantsTarget' => 0];
+        }
+
+        $savingsAmount = (int) floor($totalIncome * $savingsPercent / 100);
+        $needsTarget = (int) floor($totalIncome * $needsPercent / 100);
+        $wantsTarget = $totalIncome - $savingsAmount - $needsTarget;
+
+        return compact('savingsAmount', 'needsTarget', 'wantsTarget');
     }
 
     public function allocateRemaining(BudgetPeriod $period): void
@@ -127,6 +157,29 @@ class BudgetCalculator
         return (int) round($totalIncome / $lookbackMonths);
     }
 
+    private function allocateSavings(BudgetPeriod $period, int $savingsAmount): void
+    {
+        if ($savingsAmount <= 0) {
+            return;
+        }
+
+        $savingsCategory = Category::where('name', 'Transfer to Savings')
+            ->whereHas('parent', fn ($q) => $q->where('name', 'Savings & Investments'))
+            ->first();
+
+        if (! $savingsCategory) {
+            return;
+        }
+
+        BudgetAllocation::create([
+            'budget_period_id' => $period->id,
+            'category_id' => $savingsCategory->id,
+            'allocated_amount' => $savingsAmount,
+            'is_fixed' => true,
+            'lock_reason' => 'savings_target',
+        ]);
+    }
+
     private function allocateFromRecurring(BudgetPeriod $period, int $userId): void
     {
         $recurring = RecurringCharge::where('user_id', $userId)
@@ -149,7 +202,10 @@ class BudgetCalculator
         }
     }
 
-    private function allocateDiscretionary(BudgetPeriod $period, int $userId): void
+    /**
+     * @param  array{savingsAmount: int, needsTarget: int, wantsTarget: int}  $split
+     */
+    private function allocateDiscretionary(BudgetPeriod $period, int $userId, array $split): void
     {
         $allocated = $period->allocations()->sum('allocated_amount');
         $discretionary = $period->total_income - $allocated;
@@ -157,6 +213,8 @@ class BudgetCalculator
         if ($discretionary <= 0) {
             return;
         }
+
+        $classifications = $this->classifier->classifyForUser($userId);
 
         $start = Carbon::now()->subMonths(3)->startOfMonth();
         $end = Carbon::now()->endOfMonth();
@@ -175,10 +233,31 @@ class BudgetCalculator
             return;
         }
 
+        $needsCandidates = $candidates->filter(
+            fn ($row) => ($classifications[$row['category_id']] ?? BudgetCategory::Want) === BudgetCategory::Need
+        );
+        $wantsCandidates = $candidates->filter(
+            fn ($row) => ($classifications[$row['category_id']] ?? BudgetCategory::Want) === BudgetCategory::Want
+        );
+
+        $fixedAllocated = $period->allocations()->where('is_fixed', true)->sum('allocated_amount');
+        $needsRemaining = max(0, $split['needsTarget'] - $fixedAllocated);
+        $wantsRemaining = max(0, $discretionary - $needsRemaining);
+
+        $this->distributeProportionally($period, $needsCandidates, $needsRemaining);
+        $this->distributeProportionally($period, $wantsCandidates, $wantsRemaining);
+    }
+
+    private function distributeProportionally(BudgetPeriod $period, $candidates, int $pool): void
+    {
+        if ($candidates->isEmpty() || $pool <= 0) {
+            return;
+        }
+
         $totalHistorical = $candidates->sum('total_amount');
 
         if ($totalHistorical == 0) {
-            $perCategory = (int) floor($discretionary / $candidates->count());
+            $perCategory = (int) floor($pool / $candidates->count());
             foreach ($candidates as $cat) {
                 BudgetAllocation::create([
                     'budget_period_id' => $period->id,
@@ -186,24 +265,26 @@ class BudgetCalculator
                     'allocated_amount' => $perCategory,
                 ]);
             }
-        } else {
-            $allocated = 0;
-            $candidateArray = $candidates->values()->all();
-            foreach ($candidateArray as $i => $cat) {
-                $ratio = $cat['total_amount'] / $totalHistorical;
-                $amount = ($i === count($candidateArray) - 1)
-                    ? $discretionary - $allocated
-                    : (int) round($discretionary * $ratio);
-                $amount = max(0, $amount);
 
-                BudgetAllocation::create([
-                    'budget_period_id' => $period->id,
-                    'category_id' => $cat['category_id'],
-                    'allocated_amount' => $amount,
-                ]);
+            return;
+        }
 
-                $allocated += $amount;
-            }
+        $allocated = 0;
+        $candidateArray = $candidates->values()->all();
+        foreach ($candidateArray as $i => $cat) {
+            $ratio = $cat['total_amount'] / $totalHistorical;
+            $amount = ($i === count($candidateArray) - 1)
+                ? $pool - $allocated
+                : (int) round($pool * $ratio);
+            $amount = max(0, $amount);
+
+            BudgetAllocation::create([
+                'budget_period_id' => $period->id,
+                'category_id' => $cat['category_id'],
+                'allocated_amount' => $amount,
+            ]);
+
+            $allocated += $amount;
         }
     }
 

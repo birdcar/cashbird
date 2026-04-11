@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services\Budget;
 
+use App\Models\BudgetAllocation;
 use App\Models\Transaction;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 
 class ReadyToSpend
@@ -28,10 +30,16 @@ class ReadyToSpend
         $endOfMonth = $now->copy()->endOfMonth();
         $daysRemaining = max(1, (int) $now->diffInDays($endOfMonth) + 1);
 
+        $savingsDaily = $this->dailySavingsContribution($allocations, $daysRemaining);
+
         $results = [];
 
         foreach ($allocations as $allocation) {
             if ($categoryId !== null && $allocation->category_id !== $categoryId) {
+                continue;
+            }
+
+            if ($allocation->lock_reason === 'savings_target') {
                 continue;
             }
 
@@ -79,5 +87,38 @@ class ReadyToSpend
         $data = $this->compute($userId, $categoryId);
 
         return $data[$categoryId]['daily_safe'] ?? 0;
+    }
+
+    public function savingsContributionPerDay(int $userId): int
+    {
+        $user = User::findOrFail($userId);
+        $period = $user->currentBudgetPeriod();
+
+        if (! $period) {
+            return 0;
+        }
+
+        $allocations = $period->allocations()->get();
+        $now = Carbon::now();
+        $endOfMonth = $now->copy()->endOfMonth();
+        $daysRemaining = max(1, (int) $now->diffInDays($endOfMonth) + 1);
+
+        return $this->dailySavingsContribution($allocations, $daysRemaining);
+    }
+
+    /**
+     * @param  Collection<int, BudgetAllocation>  $allocations
+     */
+    private function dailySavingsContribution($allocations, int $daysRemaining): int
+    {
+        $savingsAllocation = $allocations->first(
+            fn (BudgetAllocation $a) => $a->lock_reason === 'savings_target'
+        );
+
+        if (! $savingsAllocation) {
+            return 0;
+        }
+
+        return (int) floor($savingsAllocation->allocated_amount / $daysRemaining);
     }
 }

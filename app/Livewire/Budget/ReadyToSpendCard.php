@@ -19,11 +19,13 @@ class ReadyToSpendCard extends Component
         $totalRemaining = collect($data)->sum('remaining');
         $totalAllocated = collect($data)->sum('allocated');
         $totalDailySafe = collect($data)->sum('daily_safe');
+        $savingsPerDay = $rts->savingsContributionPerDay($user->id);
 
         return view('livewire.budget.ready-to-spend-card', [
             'totalRemaining' => $totalRemaining,
             'totalAllocated' => $totalAllocated,
             'totalDailySafe' => $totalDailySafe,
+            'savingsPerDay' => $savingsPerDay,
             'hasData' => ! empty($data),
         ]);
     }
