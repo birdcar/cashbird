@@ -55,33 +55,39 @@ class ShareBudgetCategory extends Component
             ->where('to_user_id', $recipient->id)
             ->where('resource_type', 'budget_category')
             ->where('resource_id', $this->categoryId)
-            ->where('status', SharingStatus::Active)
-            ->exists();
+            ->first();
 
-        if ($existing) {
+        if ($existing && $existing->status === SharingStatus::Active) {
             $this->addError('email', 'Already shared with this user.');
 
             return;
         }
 
-        DB::transaction(function () use ($user, $recipient, $fga) {
-            $fga->createWarrant(
-                'budget_category',
-                $this->categoryId,
-                $this->relation,
-                'user',
-                $recipient->workos_id,
-            );
-
-            SharingInvitation::create([
-                'from_user_id' => $user->id,
-                'to_user_id' => $recipient->id,
-                'resource_type' => 'budget_category',
-                'resource_id' => $this->categoryId,
-                'relation' => $this->relation,
-                'status' => SharingStatus::Active,
-            ]);
+        DB::transaction(function () use ($user, $recipient, $existing) {
+            if ($existing) {
+                $existing->update([
+                    'relation' => $this->relation,
+                    'status' => SharingStatus::Active,
+                ]);
+            } else {
+                SharingInvitation::create([
+                    'from_user_id' => $user->id,
+                    'to_user_id' => $recipient->id,
+                    'resource_type' => 'budget_category',
+                    'resource_id' => $this->categoryId,
+                    'relation' => $this->relation,
+                    'status' => SharingStatus::Active,
+                ]);
+            }
         });
+
+        $fga->createWarrant(
+            'budget_category',
+            $this->categoryId,
+            $this->relation,
+            'user',
+            $recipient->workos_id,
+        );
 
         $this->reset('email');
         $this->dispatch('category-shared');

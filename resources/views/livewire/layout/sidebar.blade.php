@@ -7,31 +7,31 @@
     </div>
 
     <div class="flex flex-1 flex-col gap-1 p-4">
-        <a href="{{ route('dashboard') }}"
+        <a href="{{ route('dashboard') }}" {{ request()->routeIs('dashboard') ? 'aria-current=page' : '' }}
            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium {{ request()->routeIs('dashboard') ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
             Dashboard
         </a>
-        <a href="{{ route('accounts.index') }}"
+        <a href="{{ route('accounts.index') }}" {{ request()->routeIs('accounts.*') ? 'aria-current=page' : '' }}
            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium {{ request()->routeIs('accounts.*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
             Accounts
         </a>
-        <a href="{{ route('budget.index') }}"
+        <a href="{{ route('budget.index') }}" {{ request()->routeIs('budget.*') ? 'aria-current=page' : '' }}
            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium {{ request()->routeIs('budget.*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
             Budget
         </a>
-        <a href="{{ route('debt.index') }}"
+        <a href="{{ route('debt.index') }}" {{ request()->routeIs('debt.*') ? 'aria-current=page' : '' }}
            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium {{ request()->routeIs('debt.*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
             Debt
         </a>
-        <a href="{{ route('reports.index') }}"
+        <a href="{{ route('reports.index') }}" {{ request()->routeIs('reports.*') ? 'aria-current=page' : '' }}
            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium {{ request()->routeIs('reports.*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
             Reports
         </a>
-        <a href="{{ route('insights.index') }}"
+        <a href="{{ route('insights.index') }}" {{ request()->routeIs('insights.*') ? 'aria-current=page' : '' }}
            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium {{ request()->routeIs('insights.*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
             Insights
         </a>
-        <a href="{{ route('chat.index') }}"
+        <a href="{{ route('chat.index') }}" {{ request()->routeIs('chat.*') ? 'aria-current=page' : '' }}
            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium {{ request()->routeIs('chat.*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
             Ask Cashbird
         </a>

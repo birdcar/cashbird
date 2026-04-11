@@ -32,8 +32,9 @@ class GetReportTool extends Tool
 
         $query = Report::where('user_id', $user->id);
 
-        if ($request->get('month')) {
-            $query->whereDate('period_month', $request->get('month').'-01');
+        $month = $request->get('month');
+        if ($month && preg_match('/^\d{4}-\d{2}$/', $month)) {
+            $query->whereDate('period_month', $month.'-01');
         } else {
             $query->orderByDesc('period_month');
         }

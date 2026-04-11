@@ -57,7 +57,7 @@ class McpToolsTest extends TestCase
             ->tool(GetBudgetTool::class);
 
         $response->assertOk()
-            ->assertSee('No active budget period');
+            ->assertSee('No budget period found');
     }
 
     public function test_get_debt_status_with_no_debts(): void

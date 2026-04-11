@@ -30,10 +30,18 @@ class GetBudgetTool extends Tool
             return Response::error('Authentication required.');
         }
 
-        $period = $user->currentBudgetPeriod();
+        $month = $request->get('month');
+
+        if ($month && preg_match('/^\d{4}-\d{2}$/', $month)) {
+            $period = $user->budget?->periods()
+                ->whereDate('month', $month.'-01')
+                ->first();
+        } else {
+            $period = $user->currentBudgetPeriod();
+        }
 
         if (! $period) {
-            return Response::text('No active budget period found.');
+            return Response::text('No budget period found.');
         }
 
         $allocations = $period->allocations()->with('category')->get();

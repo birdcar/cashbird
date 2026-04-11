@@ -18,10 +18,10 @@ class CheckBudgetAccess
 
     public function handle(Request $request, Closure $next, string $relation = 'viewer'): Response
     {
-        $categoryId = $request->route('category');
+        $categoryId = (string) $request->route('category', '');
 
-        if (! $categoryId) {
-            return $next($request);
+        if ($categoryId === '') {
+            abort(403);
         }
 
         $user = $request->user();

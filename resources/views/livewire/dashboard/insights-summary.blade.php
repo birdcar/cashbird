@@ -1,7 +1,7 @@
 <div class="rounded-lg border border-gray-200 bg-white">
     <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
         <h2 class="text-lg font-semibold text-gray-900">Recent Insights</h2>
-        <a href="{{ route('insights.index') }}" class="text-sm text-gray-600 hover:text-gray-900" wire:navigate>View all</a>
+        <a href="{{ route('insights.index') }}" class="text-sm text-gray-600 hover:text-gray-900" wire:navigate aria-label="View all insights">View all</a>
     </div>
 
     @if($insights->isEmpty())

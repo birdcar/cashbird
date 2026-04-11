@@ -18,8 +18,12 @@ class FGAService
 
     public function __construct()
     {
-        $this->baseUrl = config('workos.fga.base_url', 'https://api.workos.com');
-        $this->apiKey = config('workos.api_key', '');
+        $this->baseUrl = (string) config('workos.fga.base_url', 'https://api.workos.com');
+        $this->apiKey = (string) config('workos.api_key', '');
+
+        if ($this->apiKey === '' && ! app()->runningUnitTests()) {
+            throw new \RuntimeException('WorkOS API key is not configured. Set WORKOS_API_KEY in .env.');
+        }
     }
 
     public function createWarrant(string $resourceType, string $resourceId, string $relation, string $subjectType, string $subjectId): void
@@ -120,7 +124,8 @@ class FGAService
     private function bumpGeneration(string $resourceType, string $resourceId): void
     {
         $genKey = "fga:gen:{$resourceType}:{$resourceId}";
-        Cache::increment($genKey);
+        $newGen = ((int) Cache::get($genKey, 0)) + 1;
+        Cache::put($genKey, $newGen, now()->addDays(7));
     }
 
     private function getGeneration(string $resourceType, string $resourceId): int

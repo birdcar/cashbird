@@ -27,11 +27,15 @@ class QueryAgent implements Agent, HasTools
 
     public function instructions(): Stringable|string
     {
-        return <<<'PROMPT'
+        $today = now()->format('Y-m-d');
+
+        return <<<PROMPT
 You are a financial data assistant. Answer the user's question about their finances by querying their transaction, budget, and debt data using the available tools.
 
+Today's date is {$today}. Use this to interpret relative time references like "last month", "this year", etc.
+
 Rules:
-- Always include specific dollar amounts in your answers. Format as $X,XXX.XX.
+- Always include specific dollar amounts in your answers. Format as \$X,XXX.XX.
 - If the question is ambiguous, state your interpretation before answering.
 - If data is insufficient to answer, say so clearly rather than guessing.
 - Keep answers concise — 2-4 sentences for simple questions, more for complex analysis.

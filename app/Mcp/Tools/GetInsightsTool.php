@@ -33,14 +33,14 @@ class GetInsightsTool extends Tool
             return Response::error('Authentication required.');
         }
 
-        $status = $request->get('status', 'active');
+        $statusEnum = InsightStatus::tryFrom($request->get('status', 'active')) ?? InsightStatus::Active;
         $insights = Insight::where('user_id', $user->id)
-            ->where('status', InsightStatus::from($status))
+            ->where('status', $statusEnum)
             ->orderByDesc('created_at')
             ->get();
 
         if ($insights->isEmpty()) {
-            return Response::text('No '.$status.' insights found.');
+            return Response::text('No '.$statusEnum->value.' insights found.');
         }
 
         $result = $insights->map(fn ($i) => [

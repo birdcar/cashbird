@@ -62,6 +62,10 @@ class AllocationEditor extends Component
 
     public function toggleLock(): void
     {
+        if ($this->isReadOnly) {
+            return;
+        }
+
         $this->isLocked = ! $this->isLocked;
     }
 

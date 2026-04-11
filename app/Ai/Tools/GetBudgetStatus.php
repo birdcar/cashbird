@@ -40,6 +40,8 @@ class GetBudgetStatus implements Tool
             'allocations' => $allocations->map(fn ($a) => [
                 'category' => $a->category?->name ?? 'Unknown',
                 'allocated' => '$'.Money::format($a->allocated_amount),
+                'spent' => '$'.Money::format($a->spent_amount ?? 0),
+                'remaining' => '$'.Money::format(($a->allocated_amount) - ($a->spent_amount ?? 0)),
                 'is_fixed' => $a->is_fixed,
                 'is_locked' => $a->is_locked,
             ])->values(),

@@ -18,7 +18,7 @@
                                 &middot; {{ $invitation->created_at->diffForHumans() }}
                             </p>
                         </div>
-                        <button wire:click="revoke('{{ $invitation->id }}')" wire:confirm="Are you sure you want to revoke access?" class="rounded-lg px-3 py-1.5 text-sm text-red-600 hover:bg-red-50">
+                        <button wire:click="revoke('{{ $invitation->id }}')" wire:confirm="Are you sure you want to revoke access?" wire:loading.attr="disabled" wire:target="revoke('{{ $invitation->id }}')" class="rounded-lg px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50" aria-label="Revoke access for {{ $invitation->toUser?->name ?? 'this user' }}">
                             Revoke
                         </button>
                     </div>

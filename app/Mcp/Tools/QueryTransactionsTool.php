@@ -51,11 +51,14 @@ class QueryTransactionsTool extends Tool
         if ($request->get('merchant')) {
             $query->where('merchant_name', 'like', '%'.$request->get('merchant').'%');
         }
-        if ($request->get('min_amount')) {
-            $query->where('amount', '<=', -(int) ($request->get('min_amount') * 100));
-        }
-        if ($request->get('max_amount')) {
-            $query->where('amount', '>=', -(int) ($request->get('max_amount') * 100));
+        if ($request->get('min_amount') || $request->get('max_amount')) {
+            $query->where('amount', '<', 0);
+            if ($request->get('min_amount')) {
+                $query->whereRaw('ABS(amount) >= ?', [(int) round($request->get('min_amount') * 100)]);
+            }
+            if ($request->get('max_amount')) {
+                $query->whereRaw('ABS(amount) <= ?', [(int) round($request->get('max_amount') * 100)]);
+            }
         }
 
         $transactions = $query->orderByDesc('date')

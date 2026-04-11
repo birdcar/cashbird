@@ -39,19 +39,21 @@ class BudgetOverview extends Component
             ->with('fromUser')
             ->get();
 
-        $sharedAllocations = collect();
-        foreach ($sharedInvitations as $invitation) {
-            $allocation = BudgetAllocation::where('category_id', $invitation->resource_id)
-                ->with('category')
-                ->first();
-            if ($allocation) {
-                $sharedAllocations->push([
-                    'allocation' => $allocation,
-                    'shared_by' => $invitation->fromUser?->name ?? 'Unknown',
-                    'relation' => $invitation->relation->value,
-                ]);
-            }
-        }
+        $categoryIds = $sharedInvitations->pluck('resource_id');
+        $allocationsByCategory = BudgetAllocation::whereIn('category_id', $categoryIds)
+            ->whereHas('period.budget', fn ($q) => $q->whereIn('user_id', $sharedInvitations->pluck('from_user_id')->unique()))
+            ->with('category')
+            ->get()
+            ->keyBy('category_id');
+
+        $sharedAllocations = $sharedInvitations
+            ->filter(fn ($inv) => $allocationsByCategory->has($inv->resource_id))
+            ->map(fn ($inv) => [
+                'allocation' => $allocationsByCategory->get($inv->resource_id),
+                'shared_by' => $inv->fromUser?->name ?? 'Unknown',
+                'relation' => $inv->relation->value,
+            ])
+            ->values();
 
         return view('livewire.budget.budget-overview', [
             'period' => $period,

@@ -20,7 +20,7 @@
                             <p class="mt-1 text-sm text-gray-600">{{ $insight->description }}</p>
                             <p class="mt-2 text-xs text-gray-500">{{ ucfirst(str_replace('_', ' ', $insight->type->value)) }} &middot; {{ $insight->created_at->diffForHumans() }}</p>
                         </div>
-                        <button wire:click="dismiss('{{ $insight->id }}')" class="shrink-0 rounded-lg px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700">
+                        <button wire:click="dismiss('{{ $insight->id }}')" wire:loading.attr="disabled" wire:target="dismiss('{{ $insight->id }}')" class="shrink-0 rounded-lg px-3 py-2.5 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50" aria-label="Dismiss: {{ $insight->title }}">
                             Dismiss
                         </button>
                     </div>

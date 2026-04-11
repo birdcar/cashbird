@@ -7,6 +7,7 @@ namespace App\Livewire\Sharing;
 use App\Models\SharingInvitation;
 use App\Services\WorkOS\FGAService;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -38,19 +39,20 @@ class ManageSharing extends Component
             ->where('id', $invitationId)
             ->firstOrFail();
 
-        $recipient = $invitation->toUser;
+        DB::transaction(function () use ($invitation, $fga) {
+            $invitation->revoke();
 
-        if ($recipient?->workos_id) {
-            $fga->deleteWarrant(
-                $invitation->resource_type,
-                $invitation->resource_id,
-                $invitation->relation->value,
-                'user',
-                $recipient->workos_id,
-            );
-        }
-
-        $invitation->revoke();
+            $recipient = $invitation->toUser;
+            if ($recipient?->workos_id) {
+                $fga->deleteWarrant(
+                    $invitation->resource_type,
+                    $invitation->resource_id,
+                    $invitation->relation->value,
+                    'user',
+                    $recipient->workos_id,
+                );
+            }
+        });
 
         unset($this->invitations);
     }

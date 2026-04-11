@@ -34,6 +34,7 @@ class GetSubscriptions implements Tool
             'amount' => '$'.Money::format($c->average_amount),
             'frequency' => $c->frequency,
             'category' => $c->category?->name ?? 'Uncategorized',
+            'last_seen_at' => $c->last_seen_at?->format('Y-m-d') ?? 'unknown',
         ])->toJson();
     }
 

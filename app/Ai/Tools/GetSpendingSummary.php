@@ -41,10 +41,12 @@ class GetSpendingSummary implements Tool
         $byCategory = $transactions->groupBy(fn ($t) => $t->category?->name ?? 'Uncategorized')
             ->map(fn ($group, $name) => [
                 'category' => $name,
+                'total_cents' => abs($group->sum('amount')),
                 'total' => '$'.Money::format(abs($group->sum('amount'))),
                 'count' => $group->count(),
             ])
-            ->sortByDesc('total')
+            ->sortByDesc('total_cents')
+            ->map(fn ($item) => collect($item)->except('total_cents')->all())
             ->values();
 
         return json_encode([
