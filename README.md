@@ -74,7 +74,7 @@ Cashbird depends on three external services: WorkOS (auth), Cloudflare Workers A
 
 All authentication goes through WorkOS AuthKit. There is no username/password login -- WorkOS handles the entire auth flow.
 
-**Create an AuthKit application:**
+**Get your API credentials:**
 
 1. Go to [WorkOS Dashboard](https://dashboard.workos.com) > **Authentication** > **AuthKit**
 2. Note your **Client ID** (starts with `client_`) and **API Key** (starts with `sk_`) from the dashboard
@@ -103,9 +103,9 @@ All authentication goes through WorkOS AuthKit. There is no username/password lo
    WORKOS_ORGANIZATION_ID=org_...
    ```
 
-**Set up Fine-Grained Authorization (FGA):**
+**Set up FGA (for household sharing):**
 
-FGA controls who can view/edit shared budgets and reports. Skip this if you're the only user -- but you'll need it for household sharing.
+FGA resource types, roles, and permissions are all scoped together and can only be configured in the WorkOS Dashboard -- not via API or CLI. Skip this if you're the only user.
 
 1. Go to **Authorization** > **Resource Types**
 2. Create resource type `budget_category`:
