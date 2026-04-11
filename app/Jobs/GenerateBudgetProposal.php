@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Models\BudgetProposal;
 use App\Models\User;
+use App\Services\Budget\DebtSavingsCoordinator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -81,5 +82,7 @@ class GenerateBudgetProposal implements ShouldQueue
                 'status' => 'pending',
             ]);
         }
+
+        app(DebtSavingsCoordinator::class)->checkAndPropose($this->user->id);
     }
 }

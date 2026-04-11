@@ -13,6 +13,8 @@ use App\Livewire\Insights\InsightsFeed;
 use App\Livewire\NetWorth\NetWorthDashboard;
 use App\Livewire\Reports\ReportList;
 use App\Livewire\Reports\ReportView;
+use App\Livewire\Savings\CreateGoal;
+use App\Livewire\Savings\SavingsGoalsList;
 use App\Livewire\Sharing\ManageSharing;
 use App\Livewire\Sharing\SharedWithMe;
 use App\Livewire\Transactions\TransactionList;
@@ -40,6 +42,9 @@ Route::middleware('auth:workos')->group(function () {
     Route::get('/budget', BudgetOverview::class)->name('budget.index');
 
     Route::get('/net-worth', NetWorthDashboard::class)->name('net-worth.index');
+
+    Route::get('/savings', SavingsGoalsList::class)->name('savings.index');
+    Route::get('/savings/create', CreateGoal::class)->name('savings.create');
 
     Route::get('/debt', DebtDashboard::class)->name('debt.index');
     Route::get('/debt/create', AddManualDebt::class)->name('debt.create');

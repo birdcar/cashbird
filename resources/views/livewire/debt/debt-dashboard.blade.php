@@ -15,6 +15,21 @@
                 Add a debt
             </a>
         </div>
+        @if($savingsStage)
+            <div class="flex items-center gap-3 rounded-lg bg-sage-50 border border-sage-200 px-4 py-3">
+                <x-phosphor-piggy-bank class="h-5 w-5 shrink-0 text-sage-600" />
+                <p class="text-sm text-sage-800">
+                    All debts cleared! Your next step:
+                    <a href="{{ route('savings.index') }}" class="font-medium underline hover:text-sage-900">
+                        @if($savingsStage->value === 'named_goals')
+                            start saving for your goals
+                        @else
+                            build your full emergency fund
+                        @endif
+                    </a>.
+                </p>
+            </div>
+        @endif
     @else
         {{-- Stats floating free --}}
         <div class="grid gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">

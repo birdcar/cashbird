@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Livewire\Debt;
 
+use App\Enums\DebtStatus;
 use App\Models\Debt;
+use App\Services\Budget\SavingsStageAdvisor;
 use App\Services\Debt\AvalancheCalculator;
 use App\Services\Debt\PayoffProjector;
 use App\Services\Debt\PayoffSchedule;
@@ -37,8 +39,17 @@ class DebtDashboard extends Component
 
     public function render(): View
     {
+        $user = auth()->user();
         $debts = $this->debts;
         $ordered = app(AvalancheCalculator::class)->calculatePayoffOrder($debts);
+
+        $savingsStage = null;
+        if ($debts->isEmpty() && $user) {
+            $hasPaidOffDebts = $user->debts()->where('status', DebtStatus::PaidOff)->exists();
+            if ($hasPaidOffDebts) {
+                $savingsStage = app(SavingsStageAdvisor::class)->currentStage($user->id);
+            }
+        }
 
         return view('livewire.debt.debt-dashboard', [
             'debts' => $ordered,
@@ -47,6 +58,7 @@ class DebtDashboard extends Component
             'avgApr' => $debts->count() > 0 ? round($debts->avg('apr'), 2) : 0,
             'schedule' => $this->schedule,
             'hasDebts' => $debts->isNotEmpty(),
+            'savingsStage' => $savingsStage,
         ]);
     }
 }
