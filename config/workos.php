@@ -1,6 +1,8 @@
 <?php
 
 declare(strict_types=1);
+use App\Models\Organization;
+use App\Models\User;
 
 return [
     /*
@@ -124,7 +126,7 @@ return [
     |
     */
 
-    'user_model' => env('WORKOS_USER_MODEL', App\Models\User::class),
+    'user_model' => env('WORKOS_USER_MODEL', User::class),
 
     /*
     |--------------------------------------------------------------------------
@@ -136,5 +138,19 @@ return [
     |
     */
 
-    'organization_model' => env('WORKOS_ORGANIZATION_MODEL', App\Models\Organization::class),
+    'organization_model' => env('WORKOS_ORGANIZATION_MODEL', Organization::class),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fine-Grained Authorization (FGA)
+    |--------------------------------------------------------------------------
+    |
+    | Configure the WorkOS FGA API endpoint for fine-grained authorization
+    | warrant management and access checks.
+    |
+    */
+
+    'fga' => [
+        'base_url' => env('WORKOS_FGA_BASE_URL', 'https://api.workos.com'),
+    ],
 ];

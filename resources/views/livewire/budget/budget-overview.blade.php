@@ -84,6 +84,27 @@
                 @endforeach
             </div>
         </div>
+        @if($sharedAllocations->isNotEmpty())
+            <div class="rounded-lg border border-blue-200 bg-blue-50">
+                <div class="border-b border-blue-200 px-6 py-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Shared with you</h2>
+                </div>
+                <div class="divide-y divide-blue-100">
+                    @foreach($sharedAllocations as $shared)
+                        <div wire:key="shared-{{ $shared['allocation']->id }}" class="flex items-center justify-between px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <span class="font-medium text-gray-900">{{ $shared['allocation']->category?->name ?? 'Unknown' }}</span>
+                                <span class="rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-700">{{ ucfirst($shared['relation']) }}</span>
+                                <span class="text-xs text-gray-500">from {{ $shared['shared_by'] }}</span>
+                            </div>
+                            <div class="text-right text-sm">
+                                <p class="font-medium text-gray-900">${{ number_format($shared['allocation']->allocated_amount / 100, 2) }}</p>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
     @else
         <div class="rounded-lg border border-gray-200 bg-white p-8 text-center">
             <p class="text-gray-600">No active budget period. Generate a new budget to get started.</p>

@@ -1,59 +1,46 @@
 # Context Map: cashbird
 
-**Phase**: 6
-**Scout Confidence**: 87/100
+**Phase**: 7
+**Scout Confidence**: 82/100
 **Verdict**: GO
 
 ## Dimensions
 
 | Dimension | Score | Notes |
 |---|---|---|
-| Scope clarity | 18/20 | All new/modified files identified; critical corrections on MCP registration and agent namespace |
-| Pattern familiarity | 18/20 | laravel/mcp source read; agent patterns read; job patterns read; tool handle signature confirmed |
-| Dependency awareness | 17/20 | routes/web.php, sidebar, dashboard, AppServiceProvider, routes/console.php all read |
-| Edge case coverage | 16/20 | Most failure modes documented; MCP auth via $request->user() confirmed; insight dedup needs care |
-| Test strategy | 18/20 | MCP testing via Server::tool(Tool::class, [...]); agent fake pattern confirmed |
+| Scope clarity | 17/20 | All files identified; critical FK type and FGA SDK gaps documented |
+| Pattern familiarity | 17/20 | Service, policy, Livewire, test patterns read; Http::fake() confirmed |
+| Dependency awareness | 16/20 | BudgetOverview/AllocationEditor consumers mapped |
+| Edge case coverage | 15/20 | workos_id vs integer id subject identity needs care |
+| Test strategy | 17/20 | Http::fake() pattern confirmed; feature test structure clear |
 
-## Prior Phase Key Risks (Phases 1-5)
+## Phase 7 Key Corrections vs Spec
 
-- `app/Console/Kernel.php` does not exist — use `routes/console.php` and `Schedule::` facade
-- Agent namespace: `App\Ai\Agents` not `App\Agents`
-- JSONB column — use `->json()` which normalizes to jsonb on pgsql
-- `user_id` FK uses integer PK — use `foreignId('user_id')` not `foreignUuid`
-
-## Phase 6 Key Corrections vs Spec
-
-- **Agent namespace**: Spec says `app/Agents/` — use `app/Ai/Agents/` (existing convention)
-- **MCP registration**: Spec says `AppServiceProvider` — use `routes/ai.php` (auto-loaded by McpServiceProvider)
-- **MCP Server**: Spec shows `MCP::tool()` facade — actual pattern is `protected array $tools = [...]` on Server class extending `Laravel\Mcp\Server`
-- **MCP tool names**: Auto-derived as kebab-case — override `protected string $name` for underscore names
-- **MCP tool handle**: Receives `Laravel\Mcp\Request` not `Illuminate\Http\Request`
-- **Scheduling**: Use `routes/console.php` not `app/Console/Kernel.php`
-- **Agent model**: Use `#[UseSmartestModel]` attribute not hardcoded `protected string $model`
-- **MCP namespace**: Use `app/Mcp/` (lowercase c)
+- **No FGA in WorkOS PHP SDK** — must use direct HTTP calls via Laravel's Http facade
+- **`users.id` is integer** — `sharing_invitations` must use `foreignId()` not `foreignUuid()` for user FKs
+- **FGA subject identity** — use `$user->workos_id` for FGA API calls, `$user->id` for local DB
+- **Middleware registration** — use `bootstrap/app.php` `$middleware->alias()`, no Kernel.php exists
+- **`config/workos.php` exists** — additive change only (add `fga` key)
+- **`resource_id` is polymorphic UUID** — use `uuid()` column, not `foreignId()`
 
 ## Key Patterns
 
-- `app/Ai/Agents/BudgetAgent.php` — Agent: `Agent, HasStructuredOutput`, `Promptable` trait, `#[UseSmartestModel]`, fluent builders
-- `app/Ai/Agents/CategorizationAgent.php` — Agent with context injection, `#[UseCheapestModel]`, static helpers
-- `vendor/laravel/mcp/src/Server.php` — MCP Server: abstract, `protected array $tools = []`
-- `vendor/laravel/mcp/src/Server/Tool.php` — MCP Tool: extends `Primitive`, `schema()` + `handle()`, `Response` return
-- `vendor/laravel/mcp/src/Server/Testing/PendingTestResponse.php` — Test: `Server::tool(Tool::class, $args)->assertOk()`
-- `app/Jobs/GenerateBudgetProposal.php` — Job: `ShouldQueue`, 4 traits, `$tries`, `$backoff`, User constructor
-- `routes/console.php` — Schedule: `->monthlyOn(1, '08:00')`, `->weekly()`
+- `app/Services/Debt/DebtSynchronizer.php` — Service: constructor injection, DB::transaction, User parameter
+- `app/Policies/DebtPolicy.php` — Policy: ownership check via user_id comparison
+- `app/Livewire/Budget/AllocationEditor.php` — `#[Locked]` IDs, `ownedAllocation()` guard
+- Http::fake() pattern confirmed in TellerWebhookTest
 
 ## Conventions
 
-- **Agents**: `app/Ai/Agents/`, `#[UseSmartestModel]`, `Promptable` trait, `HasStructuredOutput`
-- **MCP**: Tools in `app/Mcp/Tools/`, Server in `app/Mcp/`, routes in `routes/ai.php`
-- **Migrations**: `uuid('id')->primary()`, `foreignId('user_id')`, `->json()` for JSONB
-- **Testing**: `Server::actingAs($user)->tool(Tool::class, $args)`, `Agent::fake([...])`
+- Services in `app/Services/{Domain}/`
+- Middleware registered in `bootstrap/app.php` via `$middleware->alias()`
+- FGA subjects use `workos_id`, local FKs use integer `id`
+- `foreignId()` for user FKs, `uuid()` for polymorphic resource IDs
 
 ## Risks
 
-- **Agent namespace mismatch** — spec vs codebase
-- **MCP registration location** — `routes/ai.php`, not `AppServiceProvider`
-- **Tool name derivation** — kebab-case auto, need explicit underscore override
-- **Tool handle() receives `Laravel\Mcp\Request`** — not Illuminate\Http\Request
-- **Agent tools for InsightsAgent/QueryAgent** — need to verify laravel/ai tool pattern via search-docs
-- **No `routes/ai.php`** — must create fresh
+- **No FGA SDK** — must use Http facade directly, Http::fake() for tests
+- **workos_id may be null** — FGAService must handle gracefully
+- **AllocationEditor shared path** — needs FGA check in addition to ownership
+- **Cache invalidation** — test env uses array cache, verify behavior
+- **Unique constraint on sharing_invitations** — handle idempotent shares
