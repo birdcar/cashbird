@@ -7,6 +7,8 @@ namespace App\Ai\Tools;
 use App\Models\Transaction;
 use App\Support\Money;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Database\PostgresConnection;
+use Illuminate\Support\Facades\DB;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
 use Stringable;
@@ -24,6 +26,10 @@ class SemanticSearchTransactions implements Tool
 
     public function handle(Request $request): Stringable|string
     {
+        if (! DB::connection() instanceof PostgresConnection) {
+            return 'Semantic search is not available (requires PostgreSQL with pgvector).';
+        }
+
         $query = (string) $request['query'];
 
         $transactions = Transaction::where('user_id', $this->userId)

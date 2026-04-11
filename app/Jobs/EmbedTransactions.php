@@ -8,9 +8,11 @@ use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\PostgresConnection;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Laravel\Ai\Embeddings;
 
 class EmbedTransactions implements ShouldQueue
@@ -28,6 +30,10 @@ class EmbedTransactions implements ShouldQueue
 
     public function handle(): void
     {
+        if (! DB::connection() instanceof PostgresConnection) {
+            return;
+        }
+
         $transactions = Transaction::where('user_id', $this->user->id)
             ->whereNull('embedding')
             ->whereNotNull('categorized_at')
