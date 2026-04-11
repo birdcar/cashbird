@@ -1,21 +1,22 @@
-<div class="space-y-6">
+<div class="space-y-8">
     <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-gray-900">Budget</h1>
+        <h1 class="font-display text-fluid-lg font-bold text-sand-900">Budget</h1>
     </div>
 
     @if(!$hasBudget)
-        <div class="rounded-lg border border-gray-200 bg-white p-8 text-center">
-            <p class="mb-4 text-gray-600">No budget set up yet. Create one based on your spending history.</p>
-            <button wire:click="createBudget" wire:loading.attr="disabled" class="rounded-lg bg-gray-900 px-6 py-3 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
-                <span wire:loading.remove>Generate Budget</span>
-                <span wire:loading>Generating…</span>
+        <div class="rounded-xl border border-sand-200 bg-white p-10 text-center">
+            <x-phosphor-chart-pie-slice class="mx-auto mb-3 h-10 w-10 text-sand-300" />
+            <p class="mb-4 text-sand-600">No budget yet — let Cashbird build one from your spending.</p>
+            <button wire:click="createBudget" wire:confirm="This will build a budget from your spending history. Ready?" wire:loading.attr="disabled" class="rounded-lg bg-amber-500 px-6 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50">
+                <span wire:loading.remove>Create my budget</span>
+                <span wire:loading>Building your budget…</span>
             </button>
         </div>
     @elseif($period)
         @if($proposals->isNotEmpty())
-            <div class="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-                <p class="text-sm font-medium text-yellow-800">
-                    You have {{ $proposals->count() }} pending budget proposal(s) to review.
+            <div x-data x-intersect.once="$el.classList.add('animate-in')" class="rounded-xl border border-amber-200 bg-amber-50 p-4 opacity-0 translate-y-2 transition-all duration-300 ease-out">
+                <p class="text-sm font-medium text-amber-800">
+                    You have {{ $proposals->count() }} pending budget suggestion(s) to review.
                 </p>
                 @foreach($proposals as $proposal)
                     <livewire:budget.proposal-review :proposal-id="$proposal->id" :key="'prop-'.$proposal->id" />
@@ -23,45 +24,49 @@
             </div>
         @endif
 
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div class="rounded-lg border border-gray-200 bg-white p-6">
-                <p class="text-sm text-gray-600">Monthly Income</p>
-                <p class="text-2xl font-bold text-gray-900">${{ number_format($period->total_income / 100, 2) }}</p>
+        {{-- Stats floating free --}}
+        <div class="grid gap-x-8 gap-y-2 sm:grid-cols-3">
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-sand-400">Monthly income</p>
+                <p class="mt-1 font-display text-2xl font-semibold text-sand-900">${{ number_format($period->total_income / 100, 2) }}</p>
             </div>
-            <div class="rounded-lg border border-gray-200 bg-white p-6">
-                <p class="text-sm text-gray-600">Total Allocated</p>
-                <p class="text-2xl font-bold text-gray-900">${{ number_format($period->total_allocated / 100, 2) }}</p>
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-sand-400">Budgeted</p>
+                <p class="mt-1 font-display text-2xl font-semibold text-sand-900">${{ number_format($period->total_allocated / 100, 2) }}</p>
             </div>
-            <div class="rounded-lg border border-gray-200 bg-white p-6">
-                <p class="text-sm text-gray-600">Unallocated</p>
-                <p class="text-2xl font-bold {{ ($period->total_income - $period->total_allocated) >= 0 ? 'text-green-600' : 'text-red-600' }}">
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-sand-400">Unbudgeted <x-help-tip text="Income that hasn't been assigned to a category yet. Ideally this is close to zero." /></p>
+                <p class="mt-1 font-display text-2xl font-semibold {{ ($period->total_income - $period->total_allocated) >= 0 ? 'text-sage-600' : 'text-terracotta-600' }}">
                     ${{ number_format(($period->total_income - $period->total_allocated) / 100, 2) }}
                 </p>
             </div>
         </div>
 
-        <div class="rounded-lg border border-gray-200 bg-white">
-            <div class="border-b border-gray-200 px-6 py-4">
-                <h2 class="text-lg font-semibold text-gray-900">Allocations — {{ $period->month->format('F Y') }}</h2>
+        {{-- Categories list — keep card, it's interactive --}}
+        <div class="rounded-xl border border-sand-200 bg-white">
+            <div class="border-b border-sand-100 px-6 py-4">
+                <h2 class="font-display text-lg font-semibold text-sand-900">Your categories — {{ $period->month->format('F Y') }}</h2>
             </div>
-            <div class="divide-y divide-gray-100">
+            <div class="divide-y divide-sand-100">
                 @foreach($allocations as $allocation)
                     @php $rts = $rtsData[$allocation->category_id] ?? null; @endphp
                     <div wire:key="{{ $allocation->id }}" class="flex items-center justify-between px-6 py-4">
                         <div class="flex items-center gap-3">
-                            <span class="font-medium text-gray-900">{{ $allocation->category?->name ?? 'Unknown' }}</span>
+                            <span class="font-medium text-sand-900">{{ $allocation->category?->name ?? 'Unknown' }}</span>
                             @if($allocation->is_locked)
-                                <span class="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600">Locked</span>
+                                <span class="inline-flex items-center gap-1 rounded bg-sand-100 px-2 py-0.5 text-xs text-sand-600">
+                                    <x-phosphor-lock-simple-fill class="h-3 w-3" /> Locked
+                                </span>
                             @endif
                             @if($allocation->is_fixed)
-                                <span class="rounded bg-blue-50 px-2 py-0.5 text-xs text-blue-600">Fixed</span>
+                                <span class="rounded bg-amber-50 px-2 py-0.5 text-xs text-amber-700">Fixed</span>
                             @endif
                         </div>
                         <div class="flex items-center gap-6 text-sm">
                             <div class="text-right">
-                                <p class="font-medium text-gray-900">${{ number_format($allocation->allocated_amount / 100, 2) }}</p>
+                                <p class="font-medium text-sand-900">${{ number_format($allocation->allocated_amount / 100, 2) }}</p>
                                 @if($rts)
-                                    <p class="text-xs {{ $rts['remaining'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                    <p class="text-xs {{ $rts['remaining'] >= 0 ? 'text-sage-600' : 'text-terracotta-600' }}">
                                         ${{ number_format($rts['remaining'] / 100, 2) }} left
                                     </p>
                                 @endif
@@ -69,13 +74,13 @@
                             @if($rts && $allocation->allocated_amount > 0)
                                 <div class="w-24">
                                     @php $pct = min(100, ($rts['spent'] + $rts['pending']) / $allocation->allocated_amount * 100) @endphp
-                                    <div class="h-2 w-full rounded-full bg-gray-100"
+                                    <div class="h-2 w-full rounded-full bg-sand-100"
                                          role="progressbar"
                                          aria-valuenow="{{ (int) round($pct) }}"
                                          aria-valuemin="0"
                                          aria-valuemax="100"
                                          aria-label="{{ $allocation->category?->name ?? 'Category' }} spending: {{ (int) round($pct) }}%">
-                                        <div class="h-2 rounded-full {{ $pct > 100 ? 'bg-red-500' : 'bg-gray-800' }}" style="width: {{ $pct }}%"></div>
+                                        <div class="h-2 rounded-full {{ $pct > 100 ? 'bg-terracotta-500' : 'bg-amber-500' }}" style="width: {{ $pct }}%"></div>
                                     </div>
                                 </div>
                             @endif
@@ -85,20 +90,20 @@
             </div>
         </div>
         @if($sharedAllocations->isNotEmpty())
-            <div class="rounded-lg border border-blue-200 bg-blue-50">
-                <div class="border-b border-blue-200 px-6 py-4">
-                    <h2 class="text-lg font-semibold text-gray-900">Shared with you</h2>
+            <div class="rounded-xl border border-amber-200 bg-amber-50">
+                <div class="border-b border-amber-200 px-6 py-4">
+                    <h2 class="font-display text-lg font-semibold text-sand-900">Shared with you</h2>
                 </div>
-                <div class="divide-y divide-blue-100">
+                <div class="divide-y divide-amber-100">
                     @foreach($sharedAllocations as $shared)
                         <div wire:key="shared-{{ $shared['allocation']->id }}" class="flex items-center justify-between px-6 py-4">
                             <div class="flex items-center gap-3">
-                                <span class="font-medium text-gray-900">{{ $shared['allocation']->category?->name ?? 'Unknown' }}</span>
-                                <span class="rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-700">{{ ucfirst($shared['relation']) }}</span>
-                                <span class="text-xs text-gray-500">from {{ $shared['shared_by'] }}</span>
+                                <span class="font-medium text-sand-900">{{ $shared['allocation']->category?->name ?? 'Unknown' }}</span>
+                                <span class="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-700">{{ ucfirst($shared['relation']) }}</span>
+                                <span class="text-xs text-sand-500">from {{ $shared['shared_by'] }}</span>
                             </div>
                             <div class="text-right text-sm">
-                                <p class="font-medium text-gray-900">${{ number_format($shared['allocation']->allocated_amount / 100, 2) }}</p>
+                                <p class="font-medium text-sand-900">${{ number_format($shared['allocation']->allocated_amount / 100, 2) }}</p>
                             </div>
                         </div>
                     @endforeach
@@ -106,8 +111,9 @@
             </div>
         @endif
     @else
-        <div class="rounded-lg border border-gray-200 bg-white p-8 text-center">
-            <p class="text-gray-600">No active budget period. Generate a new budget to get started.</p>
+        <div class="rounded-xl border border-sand-200 bg-white p-10 text-center">
+            <x-phosphor-chart-pie-slice class="mx-auto mb-3 h-10 w-10 text-sand-300" />
+            <p class="text-sand-600">No active budget. Create one to start tracking your spending.</p>
         </div>
     @endif
 </div>

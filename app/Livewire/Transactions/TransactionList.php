@@ -7,10 +7,12 @@ namespace App\Livewire\Transactions;
 use App\Models\Category;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 #[Layout('components.layouts.app')]
+#[Title('Transactions')]
 class TransactionList extends Component
 {
     use WithPagination;

@@ -1,35 +1,38 @@
-<div class="space-y-6">
+<div class="space-y-8">
     <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-gray-900">Debt</h1>
-        <a href="{{ route('debt.create') }}" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800" wire:navigate>
+        <h1 class="font-display text-fluid-lg font-bold text-sand-900">Debt</h1>
+        <a href="{{ route('debt.create') }}" class="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600" wire:navigate>
+            <x-phosphor-plus-circle class="h-4 w-4" />
             Add Debt
         </a>
     </div>
 
     @if(!$hasDebts)
-        <div class="rounded-lg border border-gray-200 bg-white p-8 text-center">
-            <p class="mb-4 text-gray-600">No debts tracked yet. Add your debts to start building a payoff plan.</p>
-            <a href="{{ route('debt.create') }}" class="inline-block rounded-lg bg-gray-900 px-6 py-3 text-sm font-medium text-white hover:bg-gray-800" wire:navigate>
-                Add Your First Debt
+        <div class="rounded-xl border border-sand-200 bg-white p-10 text-center">
+            <x-phosphor-trend-down class="mx-auto mb-3 h-10 w-10 text-sand-300" />
+            <p class="mb-4 text-sand-600">No debts added yet. Track yours to see a payoff plan.</p>
+            <a href="{{ route('debt.create') }}" class="inline-block rounded-lg bg-amber-500 px-6 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600" wire:navigate>
+                Add a debt
             </a>
         </div>
     @else
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="rounded-lg border border-gray-200 bg-white p-6">
-                <p class="text-sm text-gray-600">Total Owed</p>
-                <p class="text-2xl font-bold text-gray-900">${{ number_format($totalOwed / 100, 2) }}</p>
+        {{-- Stats floating free --}}
+        <div class="grid gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-sand-400">Total debt</p>
+                <p class="mt-1 font-display text-2xl font-semibold text-sand-900">${{ number_format($totalOwed / 100, 2) }}</p>
             </div>
-            <div class="rounded-lg border border-gray-200 bg-white p-6">
-                <p class="text-sm text-gray-600">Average APR</p>
-                <p class="text-2xl font-bold text-gray-900">{{ $avgApr }}%</p>
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-sand-400">Avg. interest rate <x-help-tip text="The average annual interest rate across all your debts, weighted by balance." /></p>
+                <p class="mt-1 font-display text-2xl font-semibold text-sand-900">{{ $avgApr }}%</p>
             </div>
-            <div class="rounded-lg border border-gray-200 bg-white p-6">
-                <p class="text-sm text-gray-600">Monthly Minimums</p>
-                <p class="text-2xl font-bold text-gray-900">${{ number_format($totalMinimum / 100, 2) }}</p>
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-sand-400">Minimum payments</p>
+                <p class="mt-1 font-display text-2xl font-semibold text-sand-900">${{ number_format($totalMinimum / 100, 2) }}</p>
             </div>
-            <div class="rounded-lg border border-gray-200 bg-white p-6">
-                <p class="text-sm text-gray-600">Debt-Free Date</p>
-                <p class="text-2xl font-bold text-gray-900">
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-sand-400">Debt-free by</p>
+                <p class="mt-1 font-display text-2xl font-semibold text-sand-900">
                     @if($schedule->monthsToDebtFree > 0)
                         {{ $schedule->projectedDebtFreeDate->format('M Y') }}
                     @else
@@ -41,20 +44,21 @@
 
         <livewire:debt.payoff-timeline />
 
-        <div class="rounded-lg border border-gray-200 bg-white">
-            <div class="border-b border-gray-200 px-6 py-4">
-                <h2 class="text-lg font-semibold text-gray-900">Debts (by APR, highest first)</h2>
+        {{-- Debt list — keep card since it's an interactive list --}}
+        <div class="rounded-xl border border-sand-200 bg-white">
+            <div class="border-b border-sand-100 px-6 py-4">
+                <h2 class="font-display text-lg font-semibold text-sand-900">Your debts (highest interest first)</h2>
             </div>
-            <div class="divide-y divide-gray-100">
+            <div class="divide-y divide-sand-100">
                 @foreach($debts as $debt)
-                    <a wire:key="{{ $debt->id }}" href="{{ route('debt.show', $debt) }}" class="flex items-center justify-between px-6 py-4 hover:bg-gray-50" wire:navigate aria-label="{{ $debt->name }} — view debt details">
+                    <a wire:key="{{ $debt->id }}" href="{{ route('debt.show', $debt) }}" class="flex items-center justify-between px-6 py-4 transition-colors hover:bg-sand-50" wire:navigate aria-label="{{ $debt->name }} — view debt details">
                         <div>
-                            <p class="font-medium text-gray-900">{{ $debt->name }}</p>
-                            <p class="text-sm text-gray-600">{{ $debt->lender ?? ucfirst(str_replace('_', ' ', $debt->type)) }} &middot; {{ number_format((float) $debt->apr, 2) }}% APR</p>
+                            <p class="font-medium text-sand-900">{{ $debt->name }}</p>
+                            <p class="text-sm text-sand-500">{{ $debt->lender ?? ucfirst(str_replace('_', ' ', $debt->type)) }} &middot; {{ number_format((float) $debt->apr, 2) }}% interest rate</p>
                         </div>
                         <div class="text-right">
-                            <p class="font-medium text-gray-900">${{ number_format($debt->current_balance / 100, 2) }}</p>
-                            <p class="text-sm text-gray-600">${{ number_format($debt->minimum_payment / 100, 2) }}/mo min</p>
+                            <p class="font-medium text-sand-900">${{ number_format($debt->current_balance / 100, 2) }}</p>
+                            <p class="text-sm text-sand-500">${{ number_format($debt->minimum_payment / 100, 2) }}/mo min</p>
                         </div>
                     </a>
                 @endforeach

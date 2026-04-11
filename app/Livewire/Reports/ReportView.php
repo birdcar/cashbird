@@ -7,9 +7,11 @@ namespace App\Livewire\Reports;
 use App\Models\Report;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('components.layouts.app')]
+#[Title('Report')]
 class ReportView extends Component
 {
     public Report $report;

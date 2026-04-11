@@ -7,10 +7,12 @@ namespace App\Livewire\Chat;
 use App\Ai\Agents\QueryAgent;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
 #[Layout('components.layouts.app')]
+#[Title('Ask Cashbird')]
 class FinancialChat extends Component
 {
     #[Validate('required|string|max:500')]

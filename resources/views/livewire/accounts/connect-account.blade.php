@@ -1,15 +1,17 @@
-<div class="space-y-6">
+<div class="space-y-8">
         <div class="flex items-center justify-between">
-            <h1 class="text-2xl font-bold text-gray-900">Connect Account</h1>
-            <a href="{{ route('accounts.index') }}" class="text-sm text-gray-600 hover:text-gray-900">Back to Accounts</a>
+            <h1 class="font-display text-fluid-lg font-bold text-sand-900">Connect Account</h1>
+            <a href="{{ route('accounts.index') }}" class="text-sm text-sand-500 transition-colors hover:text-sand-800">Back to Accounts</a>
         </div>
 
-        <div class="rounded-lg border border-gray-200 bg-white p-8 text-center">
-            <p class="mb-4 text-gray-600">Click below to securely connect your bank account via Teller.</p>
+        <div class="rounded-xl border border-sand-200 bg-white p-10 text-center">
+            <x-phosphor-link class="mx-auto mb-4 h-10 w-10 text-amber-400" />
+            <p class="mb-6 text-sand-600">Securely connect your bank account to start tracking your spending.</p>
             <button
                 id="teller-connect-btn"
-                class="rounded-lg bg-gray-900 px-6 py-3 text-sm font-medium text-white hover:bg-gray-800"
+                class="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-6 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600"
             >
+                <x-phosphor-bank class="h-4 w-4" />
                 Connect Bank Account
             </button>
         </div>

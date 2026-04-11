@@ -10,9 +10,11 @@ use App\Services\Budget\BudgetCalculator;
 use App\Services\Budget\ReadyToSpend;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('components.layouts.app')]
+#[Title('Budget')]
 class BudgetOverview extends Component
 {
     public function createBudget(BudgetCalculator $calculator): void
@@ -21,6 +23,8 @@ class BudgetOverview extends Component
         assert($user !== null);
 
         $calculator->generateInitialBudget($user->id);
+
+        session()->flash('success', 'Your budget is ready!');
     }
 
     public function render(ReadyToSpend $rts): View

@@ -6,9 +6,11 @@ namespace App\Livewire\Accounts;
 
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('components.layouts.app')]
+#[Title('Accounts')]
 class AccountList extends Component
 {
     public function render(): View
