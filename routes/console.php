@@ -3,6 +3,7 @@
 use App\Jobs\AnalyzeSpendingInsights;
 use App\Jobs\GenerateBudgetProposal;
 use App\Jobs\GenerateMonthlyReport;
+use App\Jobs\SnapshotNetWorth;
 use App\Jobs\SyncAllAccounts;
 use App\Models\User;
 use App\Services\Debt\DebtSynchronizer;
@@ -49,3 +50,6 @@ Schedule::call(function () {
             fn (User $user) => AnalyzeSpendingInsights::dispatch($user)
         ));
 })->weekly()->name('analyze-spending-insights')->withoutOverlapping();
+
+Schedule::call(fn () => SnapshotNetWorth::dispatch())
+    ->monthlyOn(1, '02:00')->name('snapshot-net-worth')->withoutOverlapping();

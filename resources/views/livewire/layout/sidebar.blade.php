@@ -44,6 +44,11 @@
             <x-phosphor-trend-down{{ request()->routeIs('debt.*') ? '-fill' : '' }} class="h-5 w-5 shrink-0" />
             Debt
         </a>
+        <a href="{{ route('net-worth.index') }}" {{ request()->routeIs('net-worth.*') ? 'aria-current="page"' : '' }}
+           class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors {{ request()->routeIs('net-worth.*') ? 'bg-amber-100 text-amber-900' : 'text-sand-600 hover:bg-sand-200 hover:text-sand-900' }}">
+            <x-phosphor-chart-line{{ request()->routeIs('net-worth.*') ? '-fill' : '' }} class="h-5 w-5 shrink-0" />
+            Net Worth
+        </a>
 
         <div class="my-2 border-t border-sand-200"></div>
 

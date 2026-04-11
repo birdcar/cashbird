@@ -38,5 +38,10 @@
             <livewire:debt.payoff-timeline />
         </div>
 
+        {{-- Net Worth --}}
+        <div x-data x-intersect.once="$el.classList.add('animate-in')" class="opacity-0 translate-y-4 transition-all duration-500 ease-out" style="transition-delay: 550ms">
+            <livewire:dashboard.net-worth-card />
+        </div>
+
     </div>
 </x-layouts.app>
