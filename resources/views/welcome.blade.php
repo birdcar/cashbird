@@ -185,7 +185,7 @@
 
     {{-- Features --}}
     <section class="relative px-6 py-24">
-        <div class="mx-auto max-w-5xl space-y-40">
+        <div class="mx-auto max-w-5xl space-y-32">
 
             {{-- Budget --}}
             <div class="reveal grid items-center gap-16 lg:grid-cols-2">
@@ -312,6 +312,53 @@
                     <p class="mt-5 text-lg leading-relaxed text-sand-500">
                         Monthly summaries, spending breakdowns, trends over time. Generated automatically on the 1st — just open and read.
                     </p>
+                </div>
+            </div>
+
+            {{-- Savings --}}
+            <div class="reveal grid items-center gap-16 lg:grid-cols-2">
+                <div>
+                    <div class="inline-flex items-center gap-2 rounded-full bg-sage-100/80 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-sage-700">
+                        <x-phosphor-piggy-bank-fill class="h-4 w-4" />
+                        Savings
+                    </div>
+                    <h2 class="mt-6 font-display text-4xl font-bold leading-tight text-sand-900 sm:text-5xl">
+                        Goals that grow with <em class="not-italic text-sage-600">you.</em>
+                    </h2>
+                    <p class="mt-5 text-lg leading-relaxed text-sand-500">
+                        Set savings goals, track your progress, and get guidance on what to prioritize — emergency fund first, then debt, then the fun stuff. When you pay off a debt, Cashbird offers to redirect the freed-up money toward your next goal.
+                    </p>
+                </div>
+                <div class="float-card rounded-2xl border border-sand-200/60 bg-white/70 p-6 shadow-xl shadow-sand-900/5 backdrop-blur-sm" aria-hidden="true">
+                    <p class="text-xs font-medium uppercase tracking-wide text-sage-600">Your savings goals</p>
+                    <div class="mt-4 space-y-4">
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-sand-800">Emergency Fund</span>
+                                <span class="text-xs font-medium text-sage-600">On track</span>
+                            </div>
+                            <div class="mt-1.5 flex items-center gap-3">
+                                <div class="h-2 flex-1 overflow-hidden rounded-full bg-sand-100"><div class="h-2 rounded-full bg-sage-400" style="width: 72%"></div></div>
+                                <span class="text-xs text-sand-400">$2,160 / $3,000</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-sand-800">Family Vacation</span>
+                                <span class="text-xs font-medium text-amber-600">At risk</span>
+                            </div>
+                            <div class="mt-1.5 flex items-center gap-3">
+                                <div class="h-2 flex-1 overflow-hidden rounded-full bg-sand-100"><div class="h-2 rounded-full bg-amber-400" style="width: 35%"></div></div>
+                                <span class="text-xs text-sand-400">$875 / $2,500</span>
+                            </div>
+                        </div>
+                        <div class="rounded-lg border border-sage-200/60 bg-sage-50/60 px-3 py-2.5">
+                            <div class="flex items-center gap-2">
+                                <x-phosphor-arrow-bend-double-up-right class="h-3.5 w-3.5 text-sage-500" />
+                                <span class="text-xs text-sage-700">Debt paid off — redirect $200/mo to Emergency Fund?</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
