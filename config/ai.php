@@ -14,6 +14,7 @@ return [
     */
 
     'default' => env('AI_PROVIDER', 'cloudflare'),
+    'default_for_embeddings' => env('AI_EMBEDDING_PROVIDER', 'cloudflare'),
 
     /*
     |--------------------------------------------------------------------------
@@ -54,6 +55,10 @@ return [
                     'default' => env('AI_MODEL_DEFAULT', '@cf/zhipu/glm-4.7-flash'),
                     'smartest' => env('AI_MODEL_SMARTEST', '@cf/zhipu/glm-4.7-flash'),
                     'cheapest' => env('AI_MODEL_CHEAPEST', '@cf/google/gemma-4-26b-a4b-it'),
+                ],
+                'embeddings' => [
+                    'default' => env('AI_EMBEDDING_MODEL', '@cf/baai/bge-base-en-v1.5'),
+                    'dimensions' => (int) env('AI_EMBEDDING_DIMENSIONS', 768),
                 ],
             ],
         ],

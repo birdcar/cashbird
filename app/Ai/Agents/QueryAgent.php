@@ -8,6 +8,7 @@ use App\Ai\Tools\GetBudgetStatus;
 use App\Ai\Tools\GetDebtOverview;
 use App\Ai\Tools\GetSpendingSummary;
 use App\Ai\Tools\QueryTransactions;
+use App\Ai\Tools\SemanticSearchTransactions;
 use Laravel\Ai\Attributes\MaxSteps;
 use Laravel\Ai\Attributes\UseSmartestModel;
 use Laravel\Ai\Contracts\Agent;
@@ -16,7 +17,7 @@ use Laravel\Ai\Promptable;
 use Stringable;
 
 #[UseSmartestModel]
-#[MaxSteps(5)]
+#[MaxSteps(6)]
 class QueryAgent implements Agent, HasTools
 {
     use Promptable;
@@ -36,7 +37,8 @@ Today's date is {$today}. Use this to interpret relative time references like "l
 When the user asks an open-ended question without a time qualifier (e.g., "what did I spend?"), default to the current month.
 
 TOOL SELECTION:
-- `query_transactions`: For specific transaction lookup, filtering by merchant/date/amount
+- `semantic_search_transactions`: For finding transactions by meaning (e.g., "coffee shops", "eating out"). Use this FIRST when the user asks about a type of spending rather than a specific merchant.
+- `query_transactions`: For specific transaction lookup, filtering by exact merchant/date/amount
 - `get_spending_summary`: For category totals and spending breakdowns
 - `get_budget_status`: For budget adherence, allocation vs. spent
 - `get_debt_overview`: For debt balances, payoff projections, payment history
@@ -57,6 +59,7 @@ PROMPT;
     public function tools(): iterable
     {
         return [
+            new SemanticSearchTransactions($this->userId),
             new QueryTransactions($this->userId),
             new GetSpendingSummary($this->userId),
             new GetBudgetStatus($this->userId),

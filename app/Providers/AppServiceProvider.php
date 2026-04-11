@@ -7,6 +7,7 @@ namespace App\Providers;
 use App\Events\TransactionsCategorized;
 use App\Events\TransactionsSynced;
 use App\Listeners\CategorizeNewTransactions;
+use App\Listeners\EmbedCategorizedTransactions;
 use App\Listeners\InvalidateSpendingCache;
 use App\Listeners\SyncDebtsOnTransactionSync;
 use App\Listeners\UpdateReadyToSpendOnTransaction;
@@ -34,5 +35,6 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(TransactionsSynced::class, SyncDebtsOnTransactionSync::class);
         Event::listen(TransactionsCategorized::class, InvalidateSpendingCache::class);
         Event::listen(TransactionsCategorized::class, UpdateReadyToSpendOnTransaction::class);
+        Event::listen(TransactionsCategorized::class, EmbedCategorizedTransactions::class);
     }
 }

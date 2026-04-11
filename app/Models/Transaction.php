@@ -29,6 +29,7 @@ class Transaction extends Model
         'running_balance',
         'raw_data',
         'categorized_at',
+        'embedding',
     ];
 
     protected function casts(): array
@@ -39,6 +40,7 @@ class Transaction extends Model
             'running_balance' => 'integer',
             'raw_data' => 'array',
             'categorized_at' => 'datetime',
+            'embedding' => 'array',
         ];
     }
 
