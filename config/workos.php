@@ -111,7 +111,7 @@ return [
     */
 
     'webhooks' => [
-        'enabled' => true,
+        'enabled' => false,
         'prefix' => 'webhooks/workos',
         'sync_enabled' => env('WORKOS_WEBHOOK_SYNC_ENABLED', true),
     ],
