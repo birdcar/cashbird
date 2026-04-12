@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\TellerController;
+use App\Http\Controllers\FinancialConnectionsController;
 use App\Http\Controllers\UndoController;
 use App\Livewire\Accounts\AccountList;
 use App\Livewire\Accounts\ConnectAccount;
@@ -35,7 +35,8 @@ Route::middleware('auth:workos')->group(function () {
 
     Route::get('/accounts', AccountList::class)->name('accounts.index');
     Route::get('/accounts/connect', ConnectAccount::class)->name('accounts.connect');
-    Route::post('/accounts/connect', [TellerController::class, 'store'])->name('teller.store');
+    Route::post('/accounts/connect/session', [FinancialConnectionsController::class, 'createSession'])->name('connections.session');
+    Route::post('/accounts/connect', [FinancialConnectionsController::class, 'store'])->name('connections.store');
 
     Route::get('/transactions', TransactionList::class)->name('transactions.index');
 

@@ -16,7 +16,7 @@ class ConnectAccount extends Component
     public function render(): View
     {
         return view('livewire.accounts.connect-account', [
-            'appId' => config('teller.app_id'),
+            'stripePublishableKey' => config('stripe.publishable_key'),
         ]);
     }
 }

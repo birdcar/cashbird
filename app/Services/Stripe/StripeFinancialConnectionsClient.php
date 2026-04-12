@@ -27,9 +27,6 @@ class StripeFinancialConnectionsClient
     public function createSession(array $permissions, string $returnUrl): Session
     {
         return $this->stripe->financialConnections->sessions->create([
-            'account_holder' => [
-                'type' => 'customer',
-            ],
             'permissions' => $permissions,
             'filters' => [
                 'countries' => ['US'],
