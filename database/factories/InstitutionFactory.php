@@ -16,7 +16,7 @@ class InstitutionFactory extends Factory
     public function definition(): array
     {
         return [
-            'teller_id' => 'inst_' . fake()->unique()->bothify('####????'),
+            'external_id' => 'inst_'.fake()->unique()->bothify('####????'),
             'name' => fake()->company(),
         ];
     }

@@ -20,7 +20,7 @@ class TransactionFactory extends Factory
         return [
             'account_id' => Account::factory(),
             'user_id' => User::factory(),
-            'teller_id' => 'txn_' . fake()->unique()->bothify('####????'),
+            'external_id' => 'txn_'.fake()->unique()->bothify('####????'),
             'amount' => fake()->numberBetween(-50000, 50000),
             'date' => fake()->dateTimeBetween('-90 days'),
             'description' => fake()->sentence(3),

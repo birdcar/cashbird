@@ -19,8 +19,8 @@ class Account extends Model
 
     protected $fillable = [
         'user_id',
-        'enrollment_id',
-        'teller_id',
+        'connection_id',
+        'external_id',
         'institution_id',
         'name',
         'type',
@@ -48,10 +48,10 @@ class Account extends Model
         return $this->belongsTo(User::class);
     }
 
-    /** @return BelongsTo<TellerEnrollment, $this> */
-    public function enrollment(): BelongsTo
+    /** @return BelongsTo<Connection, $this> */
+    public function connection(): BelongsTo
     {
-        return $this->belongsTo(TellerEnrollment::class, 'enrollment_id');
+        return $this->belongsTo(Connection::class);
     }
 
     /** @return BelongsTo<Institution, $this> */

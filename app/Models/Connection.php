@@ -4,31 +4,30 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use Database\Factories\TellerEnrollmentFactory;
+use Database\Factories\ConnectionFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class TellerEnrollment extends Model
+class Connection extends Model
 {
-    /** @use HasFactory<TellerEnrollmentFactory> */
+    /** @use HasFactory<ConnectionFactory> */
     use HasFactory, HasUuids;
 
     protected $fillable = [
         'user_id',
         'institution_id',
-        'access_token',
+        'stripe_account_id',
         'status',
-        'enrolled_at',
+        'connected_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'access_token' => 'encrypted',
-            'enrolled_at' => 'datetime',
+            'connected_at' => 'datetime',
         ];
     }
 
@@ -47,6 +46,6 @@ class TellerEnrollment extends Model
     /** @return HasMany<Account, $this> */
     public function accounts(): HasMany
     {
-        return $this->hasMany(Account::class, 'enrollment_id');
+        return $this->hasMany(Account::class, 'connection_id');
     }
 }

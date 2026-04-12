@@ -54,10 +54,10 @@ class User extends Authenticatable
         ];
     }
 
-    /** @return HasMany<TellerEnrollment, $this> */
-    public function enrollments(): HasMany
+    /** @return HasMany<Connection, $this> */
+    public function connections(): HasMany
     {
-        return $this->hasMany(TellerEnrollment::class);
+        return $this->hasMany(Connection::class);
     }
 
     /** @return HasMany<Account, $this> */

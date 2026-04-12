@@ -16,7 +16,7 @@ class Institution extends Model
     use HasFactory, HasUuids;
 
     protected $fillable = [
-        'teller_id',
+        'external_id',
         'name',
     ];
 
@@ -26,9 +26,9 @@ class Institution extends Model
         return $this->hasMany(Account::class);
     }
 
-    /** @return HasMany<TellerEnrollment, $this> */
-    public function enrollments(): HasMany
+    /** @return HasMany<Connection, $this> */
+    public function connections(): HasMany
     {
-        return $this->hasMany(TellerEnrollment::class);
+        return $this->hasMany(Connection::class);
     }
 }

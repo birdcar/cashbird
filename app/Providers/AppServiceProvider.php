@@ -11,7 +11,7 @@ use App\Listeners\EmbedCategorizedTransactions;
 use App\Listeners\InvalidateSpendingCache;
 use App\Listeners\SyncDebtsOnTransactionSync;
 use App\Listeners\UpdateReadyToSpendOnTransaction;
-use App\Services\Teller\TellerClient;
+use App\Services\Stripe\StripeFinancialConnectionsClient;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
@@ -19,10 +19,8 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(TellerClient::class, fn () => new TellerClient(
-            certPath: config('teller.cert_path'),
-            keyPath: config('teller.key_path'),
-            baseUrl: config('teller.base_url', 'https://api.teller.io'),
+        $this->app->singleton(StripeFinancialConnectionsClient::class, fn () => new StripeFinancialConnectionsClient(
+            secretKey: config('stripe.secret_key', ''),
         ));
     }
 
