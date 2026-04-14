@@ -12,7 +12,7 @@ It's not a SaaS product or a startup -- it's a household tool that connects to o
 
 **AI-generated budgets.** Instead of manually setting up budget categories, Cashbird analyzes your spending history and proposes a budget. You review and adjust the suggestions, but the starting point is real data rather than guesswork.
 
-**Bank account sync.** Connects to bank accounts through the [Teller API](https://teller.io/) to pull in transactions automatically. Transactions get categorized by an AI agent, with the option to override categories manually.
+**Bank account sync.** Connects to bank accounts through [Stripe Financial Connections](https://stripe.com/financial-connections) to pull in transactions automatically. Transactions sync daily via Stripe's subscription API, with a manual refresh button for on-demand updates. Transactions get categorized by an AI agent, with the option to override categories manually.
 
 **Debt payoff planner.** Tracks debts with balances, interest rates, and minimum payments, then projects a payoff timeline using the avalanche method. Shows you a "debt-free by" date.
 
@@ -31,7 +31,7 @@ It's not a SaaS product or a startup -- it's a household tool that connects to o
 - **Alpine.js** -- client-side interactions like keyboard shortcuts and the command palette
 - **Tailwind CSS v4** -- warm OKLCH color palette (sand, amber, sage, terracotta) instead of the usual cold grays
 - **WorkOS AuthKit** -- authentication and fine-grained authorization for household sharing
-- **Teller API** -- bank account connections and transaction sync
+- **Stripe Financial Connections** -- bank account linking, transaction sync, and balance data via Stripe.js modal and subscription-based daily refresh
 - **Laravel AI SDK + Cloudflare Workers AI** -- powers budget generation, transaction categorization, insights, reports, and the chat interface. Uses a two-tier model strategy: a capable model (GLM-4.7-Flash) for agentic tasks and a cheap model (Gemma 4) for classification. Routed through Cloudflare AI Gateway for caching and analytics
 - **PostgreSQL** -- primary database
 - **Redis** -- queues and caching
@@ -66,7 +66,7 @@ The `CategorySeeder` is **required** -- it populates the system category hierarc
 
 ### Configure external services
 
-Cashbird depends on three external services: WorkOS (auth), Cloudflare Workers AI (AI features), and Teller (bank connections). Each requires some dashboard setup before the app will work.
+Cashbird depends on three external services: WorkOS (auth), Cloudflare Workers AI (AI features), and Stripe (bank connections). Each requires some dashboard setup before the app will work.
 
 > **Note:** The app runs on a Tailscale tailnet, so it is not publicly accessible. WorkOS webhooks won't work -- instead, Cashbird polls the WorkOS Events API with a long-running worker process included in `composer dev`.
 
@@ -151,21 +151,26 @@ The default models are already configured in `.env.example`. Override if needed:
 
 **Alternative providers:** Set `AI_PROVIDER=anthropic` (+ `ANTHROPIC_API_KEY`), `AI_PROVIDER=openai` (+ `OPENAI_API_KEY`), or `AI_PROVIDER=ollama` (+ `OLLAMA_BASE_URL`) to use a different backend. Cloudflare is the default because it's the cheapest option.
 
-#### 3. Teller (bank connections)
+#### 3. Stripe Financial Connections
 
-Teller provides bank account linking and transaction sync. AI features work without Teller (you just won't have any transaction data).
+Stripe Financial Connections provides bank account linking and transaction/balance sync. AI features work without Stripe (you just won't have any transaction data).
 
-1. Register at [teller.io](https://teller.io) and create an application
-2. Note your **Application ID** (starts with `app_`)
-3. Download the mTLS certificate pair from the Teller Dashboard. Store the files somewhere persistent (e.g. `~/.teller/`)
-4. Set in `.env`:
+1. Go to [Stripe Dashboard](https://dashboard.stripe.com) > **Developers** > **API keys**
+2. Note your **Publishable key** (starts with `pk_`) and **Secret key** (starts with `sk_`)
+3. Go to **Developers** > **Webhooks** > **Add endpoint**
+   - URL: `https://your-domain.com/stripe/webhook` (or your local tunnel URL for development)
+   - Events: `financial_connections.account.refreshed_transactions_data`, `financial_connections.account.refreshed_balance`, `financial_connections.account.disconnected`
+4. Note the **Webhook signing secret** (starts with `whsec_`)
+5. Set in `.env`:
    ```
-   TELLER_APP_ID=app_...
-   TELLER_CERT_PATH=/absolute/path/to/certificate.pem
-   TELLER_KEY_PATH=/absolute/path/to/private_key.pem
+   STRIPE_SECRET_KEY=sk_...
+   STRIPE_PUBLISHABLE_KEY=pk_...
+   STRIPE_WEBHOOK_SECRET=whsec_...
    ```
 
-The mTLS cert/key are optional for local development -- the Teller client skips certificate attachment if the paths are empty. Transactions sync automatically every hour (incremental) and every 6 hours (full), or on demand via the "Sync Now" button on the Accounts page.
+Transactions sync automatically once daily via Stripe's subscription API. Stripe sends a webhook when fresh data is available, and the app pulls updated transactions. You can also trigger a manual sync from the Accounts page.
+
+> **Note:** For local development without a public URL, the daily fallback schedule (runs at 23:00) will sync transactions even without webhooks. You can also use [Stripe CLI](https://stripe.com/docs/stripe-cli) to forward webhooks locally: `stripe listen --forward-to localhost:8000/stripe/webhook`
 
 #### 4. Database
 
@@ -226,7 +231,7 @@ php artisan test --compact --filter=testAvalancheCalculator
 app/
   Livewire/          # Livewire components (Dashboard, Budget, Debt, Chat, etc.)
   Mcp/               # MCP server and tools
-  Services/          # Business logic (budget calculation, debt projection, Teller client)
+  Services/          # Business logic (budget calculation, debt projection, Stripe FC client)
 resources/
   views/livewire/    # Blade templates for each Livewire component
   views/components/  # Shared UI components (help tooltips, layout)
@@ -249,7 +254,7 @@ Cashbird is deployed with [Coolify](https://coolify.io/), a self-hosted PaaS.
    - Database: `DB_CONNECTION=pgsql`, `DB_HOST`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`
    - Redis: `REDIS_HOST`, `REDIS_PASSWORD` (if applicable)
    - WorkOS: `WORKOS_CLIENT_ID`, `WORKOS_API_KEY`, `WORKOS_REDIRECT_URI`, `WORKOS_ORGANIZATION_ID`
-   - Teller: `TELLER_APP_ID`, cert/key paths
+   - Stripe: `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`
    - AI: `CLOUDFLARE_AI_GATEWAY_URL`, `CLOUDFLARE_AI_API_TOKEN`
 4. **Post-deploy command** — Coolify runs this after each deploy:
    ```bash
