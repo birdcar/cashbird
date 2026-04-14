@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Livewire\Accounts;
 
 use App\Jobs\SyncAllAccounts;
+use App\Services\Stripe\StripeFinancialConnectionsClient;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -19,9 +21,19 @@ class AccountList extends Component
         $user = auth()->user();
         assert($user !== null);
 
+        $client = app(StripeFinancialConnectionsClient::class);
+
+        foreach ($user->accounts as $account) {
+            try {
+                $client->refreshTransactions($account->external_id);
+            } catch (\Exception $e) {
+                Log::info("Refresh not available for {$account->external_id}: {$e->getMessage()}");
+            }
+        }
+
         SyncAllAccounts::dispatch($user);
 
-        session()->flash('success', 'Sync started. Transactions will update shortly.');
+        session()->flash('success', 'Sync requested. Transactions will update shortly.');
     }
 
     public function render(): View

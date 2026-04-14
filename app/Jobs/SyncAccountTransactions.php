@@ -7,13 +7,13 @@ namespace App\Jobs;
 use App\Events\TransactionsSynced;
 use App\Models\Account;
 use App\Models\Transaction;
-use App\Services\Teller\TellerClient;
+use App\Services\Stripe\StripeFinancialConnectionsClient;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log;
+use Stripe\Exception\ApiErrorException;
 
 class SyncAccountTransactions implements ShouldQueue
 {
@@ -21,39 +21,37 @@ class SyncAccountTransactions implements ShouldQueue
 
     public int $tries = 3;
 
-    public array $backoff = [1, 5, 30];
+    /** @var list<int> */
+    public array $backoff = [60, 300];
 
     public function __construct(
         public Account $account,
         public bool $fullSync = false,
     ) {}
 
-    public function handle(TellerClient $teller): void
+    public function handle(StripeFinancialConnectionsClient $client): void
     {
-        $this->account->loadMissing('enrollment');
-        $enrollment = $this->account->enrollment;
-        $accessToken = $enrollment->access_token;
-
-        $this->syncBalances($teller, $accessToken);
-        $this->syncTransactions($teller, $accessToken);
+        $this->syncBalances($client);
+        $this->syncTransactions($client);
 
         $this->account->update(['last_synced_at' => now()]);
 
         TransactionsSynced::dispatch($this->account);
     }
 
-    private function syncBalances(TellerClient $teller, string $accessToken): void
+    private function syncBalances(StripeFinancialConnectionsClient $client): void
     {
         try {
-            $balances = $teller->getAccountBalances($accessToken, $this->account->teller_id);
+            $balances = $client->getBalances($this->account->external_id);
 
             $this->account->update([
-                'balance_available' => $this->toCents($balances['available'] ?? null),
-                'balance_current' => $this->toCents($balances['ledger'] ?? null),
+                'balance_current' => $balances['current'],
+                'balance_available' => $balances['available'],
             ]);
-        } catch (\Illuminate\Http\Client\RequestException $e) {
-            if ($e->response->status() === 401) {
-                $this->account->enrollment->update(['status' => 'expired']);
+        } catch (ApiErrorException $e) {
+            if ($e->getHttpStatus() === 401 || $e->getHttpStatus() === 403) {
+                $this->account->loadMissing('connection');
+                $this->account->connection?->update(['status' => 'expired']);
                 $this->fail($e);
 
                 return;
@@ -63,53 +61,43 @@ class SyncAccountTransactions implements ShouldQueue
         }
     }
 
-    private function syncTransactions(TellerClient $teller, string $accessToken): void
+    private function syncTransactions(StripeFinancialConnectionsClient $client): void
     {
-        $fromId = null;
+        $startingAfter = null;
 
         if (! $this->fullSync) {
             $latest = $this->account->transactions()
                 ->orderByDesc('date')
                 ->orderByDesc('id')
                 ->first();
-            $fromId = $latest?->teller_id;
+            $startingAfter = $latest?->external_id;
         }
 
         do {
-            $transactions = $teller->listTransactions(
-                $accessToken,
-                $this->account->teller_id,
-                $fromId,
+            $transactions = $client->listTransactions(
+                $this->account->external_id,
+                $startingAfter,
             );
 
             foreach ($transactions as $txn) {
                 Transaction::updateOrCreate(
-                    ['teller_id' => $txn['id']],
+                    ['external_id' => $txn->id],
                     [
                         'account_id' => $this->account->id,
                         'user_id' => $this->account->user_id,
-                        'amount' => $this->toCents($txn['amount']),
-                        'date' => $txn['date'],
-                        'description' => $txn['description'],
-                        'merchant_name' => $txn['details']['counterparty']['name'] ?? null,
-                        'status' => $txn['status'],
-                        'type' => $txn['type'] ?? null,
-                        'running_balance' => $this->toCents($txn['running_balance'] ?? null),
-                        'raw_data' => $txn,
+                        'amount' => $txn->amount,
+                        'date' => $txn->transacted_at ?? $txn->posted_at ?? now()->toDateString(),
+                        'description' => $txn->description,
+                        'merchant_name' => $txn->description,
+                        'status' => $txn->status,
+                        'type' => null,
+                        'running_balance' => null,
+                        'raw_data' => $txn->toArray(),
                     ],
                 );
             }
 
-            $fromId = $transactions->isNotEmpty() ? $transactions->last()['id'] : null;
+            $startingAfter = $transactions->isNotEmpty() ? $transactions->last()->id : null;
         } while ($transactions->isNotEmpty() && $transactions->count() >= 100);
-    }
-
-    private function toCents(?string $amount): ?int
-    {
-        if ($amount === null) {
-            return null;
-        }
-
-        return (int) round((float) $amount * 100);
     }
 }

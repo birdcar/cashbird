@@ -4,9 +4,7 @@ use App\Jobs\AnalyzeSpendingInsights;
 use App\Jobs\GenerateBudgetProposal;
 use App\Jobs\GenerateMonthlyReport;
 use App\Jobs\SnapshotNetWorth;
-use App\Jobs\SyncAccountTransactions;
 use App\Jobs\SyncAllAccounts;
-use App\Models\Account;
 use App\Models\User;
 use App\Services\Debt\DebtSynchronizer;
 use Illuminate\Foundation\Inspiring;
@@ -18,18 +16,11 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::call(function () {
-    User::whereHas('enrollments', fn ($q) => $q->where('status', 'active'))
+    User::whereHas('connections', fn ($q) => $q->where('status', 'active'))
         ->chunkById(100, fn ($users) => $users->each(
             fn (User $user) => SyncAllAccounts::dispatch($user)
         ));
-})->everySixHours()->name('sync-all-accounts')->withoutOverlapping();
-
-Schedule::call(function () {
-    Account::whereHas('enrollment', fn ($q) => $q->where('status', 'active'))
-        ->chunkById(100, fn ($accounts) => $accounts->each(
-            fn (Account $account) => SyncAccountTransactions::dispatch($account)
-        ));
-})->hourly()->name('sync-account-transactions')->withoutOverlapping();
+})->dailyAt('23:00')->name('sync-all-accounts-fallback')->withoutOverlapping();
 
 Schedule::call(function () {
     User::whereHas('budget', fn ($q) => $q->whereHas('periods', fn ($p) => $p->where('status', 'active')))

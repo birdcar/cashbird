@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\FinancialConnectionsController;
+use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\UndoController;
 use App\Livewire\Accounts\AccountList;
 use App\Livewire\Accounts\ConnectAccount;
@@ -19,6 +20,8 @@ use App\Livewire\Sharing\ManageSharing;
 use App\Livewire\Sharing\SharedWithMe;
 use App\Livewire\Transactions\TransactionList;
 use Illuminate\Support\Facades\Route;
+
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle'])->name('stripe.webhook');
 
 Route::get('/', function () {
     if (auth('workos')->check()) {

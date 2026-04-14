@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Models\User;
-use App\Services\Teller\TellerClient;
+use App\Services\Stripe\StripeFinancialConnectionsClient;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use Stripe\Exception\ApiErrorException;
 
 class SyncAllAccounts implements ShouldQueue
 {
@@ -25,29 +27,23 @@ class SyncAllAccounts implements ShouldQueue
         public User $user,
     ) {}
 
-    public function handle(TellerClient $teller): void
+    public function handle(StripeFinancialConnectionsClient $client): void
     {
-        $enrollments = $this->user->enrollments()->where('status', 'active')->get();
+        $connections = $this->user->connections()->where('status', 'active')->get();
 
-        foreach ($enrollments as $enrollment) {
-            $accessToken = $enrollment->access_token;
+        foreach ($connections as $connection) {
+            foreach ($connection->accounts as $account) {
+                try {
+                    $stripeAccount = $client->getAccount($account->external_id);
 
-            $tellerAccounts = $teller->listAccounts($accessToken);
+                    $account->update([
+                        'name' => $stripeAccount->display_name ?? $stripeAccount->institution_name,
+                    ]);
 
-            foreach ($tellerAccounts as $tellerAccount) {
-                $account = $this->user->accounts()->updateOrCreate(
-                    ['teller_id' => $tellerAccount['id']],
-                    [
-                        'enrollment_id' => $enrollment->id,
-                        'institution_id' => $enrollment->institution_id,
-                        'name' => $tellerAccount['name'],
-                        'type' => $tellerAccount['type'],
-                        'subtype' => $tellerAccount['subtype'] ?? null,
-                        'currency' => $tellerAccount['currency'] ?? 'USD',
-                    ],
-                );
-
-                SyncAccountTransactions::dispatch($account, fullSync: true);
+                    SyncAccountTransactions::dispatch($account);
+                } catch (ApiErrorException $e) {
+                    Log::warning("Failed to sync account {$account->external_id}: {$e->getMessage()}");
+                }
             }
         }
     }
